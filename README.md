@@ -199,4 +199,4 @@ IPV4 Unicast        2 100.00% 100.00%      100.00%            100.00%  0.00%    
 libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 9)
 
 Jun 2023. Application isis-mocker is an Open Source software. 
-It is distributed under the terms of the MIT license.
+It is distributed under the terms of the MIT license. CLI lib uses Boost license.
