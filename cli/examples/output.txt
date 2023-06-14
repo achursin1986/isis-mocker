@@ -1,0 +1,19 @@
+cli> Commands available:
+ - help
+	This help message
+ - exit
+	Quit the session
+ - hello
+	Print hello world
+ - hello_everysession
+	Print hello everybody on all open sessions
+ - answer <int>
+	Print the answer to Life, the Universe and Everything 
+ - color
+	Enable colors in the cli
+ - nocolor
+	Disable colors in the cli
+ - sub
+	(menu)
+cli> Hello, world
+cli> Goodbye and thanks for all the fish.

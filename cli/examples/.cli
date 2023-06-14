@@ -1,0 +1,52 @@
+help
+add 
+add 4 5 6
+free_function 5
+error 1
+error
+sort a c b
+color
+sort a z c b
+hello_everysession 
+quit
+exit
+quit
+exit
+help
+sub 
+help
+cli
+sub
+subsub
+cli
+help
+sub
+cli
+free_function 
+help 
+free-function 1
+free_function 1
+exit
+help
+reverse 
+reverse hello
+quit
+exit
+help
+exit
+help
+sub
+help
+demo
+subsub
+help
+sub
+cli
+exit
+sub subsub hello 
+sub
+exit
+sub 
+help
+cli
+exit
