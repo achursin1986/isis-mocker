@@ -3,7 +3,7 @@ name: 'isis-mocker'
 on:
   push:
     tag:
-      - 'v*'
+      - 'v.*'
 
 jobs:
   build:
