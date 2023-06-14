@@ -20,7 +20,7 @@ jobs:
              chmod +x ./install_gtest.sh
              ./install_gtest.sh
       - name: build
-      - run: |
+        run: |
              cmake .
              cmake --build . -j4
              make package
