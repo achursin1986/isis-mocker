@@ -18,7 +18,7 @@ jobs:
         run: |
              sudo apt-get install git -y
              chmod +x ./install_gtest.sh
-             ./install_gtest.sh
+             sudo ./install_gtest.sh
       - name: build
         run: |
              cmake .
