@@ -1,5 +1,6 @@
 #pragma once
 #include <iostream>
+#include <string>
 #include "utils.hpp"
 
 struct TesterStats {
@@ -50,16 +51,44 @@ class Tester {
                                                                    new_value[42] = static_cast<unsigned char>(checksum & 0xFF);       
                     
                                                       }
-                                                       // need to send all fragments per diff 
+                                                      /* making test samples based on testdb */
+                                                       std::unordered_map<std::string, std::string> test_sample1;
+                                                       std::unordered_map<std::string, std::string> test_sample2;
+      
+                                                       for ( auto k: testdb_ ) { 
+                                                            auto key = k.first;
+                                                            auto key2 = key;
+                                                            auto value = k.second;
+                                                            auto value2 = lsdb_[key];
+                                                            std::string stripped = key;
+                                                            test_sample1.insert(std::make_pair<std::string,std::string>(std::move(key),std::move(value2)));
+                                                            test_sample2.insert(std::make_pair<std::string,std::string>(std::move(key2),std::move(value)));
+                                                            for ( int i=0; i<6; i++ ) stripped.pop_back(); 
+                                                            
+                                                            for ( auto l: lsdb_ ) {
+                                                               if (l.first.find(stripped) != std::string::npos) {
+                                                                       auto first = l.first;
+                                                                       auto second = l.second;
+                                                                       auto first2 = first;
+                                                                       auto second2 = second;
+                                                                       test_sample1.insert(std::make_pair<std::string,std::string>(std::move(first),std::move(second)));
+                                                                       test_sample2.insert(std::make_pair<std::string,std::string>(std::move(first2),std::move(second2)));
+                                                               }
+
+                                                            }
+
+                                                      
+                                                        }
+
                                                         while(! terminate ) {                                                       
                                                            if (  stats_.cycles % 2 ) {
                                                                   if ( state_ ) {
-                                                                        sendDB(lsdb_, io_);                          
+                                                                        sendDB(test_sample1, io_);                          
                                                                   }  
 
                                                            }  else {
                                                                  if ( state_ ) {
-                                                                        sendDB(testdb_, io_);                                                               
+                                                                        sendDB(test_sample2, io_);                                                               
                                                                  } 
 
                                                            }
