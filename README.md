@@ -58,11 +58,11 @@ Commands available:
 Simple example how to run:
 
 ```
-isis-mocker>run mock 0000.0000.0003       
-isis-mocker>run mocker 0 0000.0000.0001 eth3 10.0.0.1 49.0001
-isis-mocker>run mocker 1 0000.0000.0002 eth4 10.1.0.1 49.0001
-isis-mocker>run flood 0
-isis-mocker>run flood 1
+isis-mocker> run mock 0000.0000.0003       
+isis-mocker> run mocker 0 0000.0000.0001 eth3 10.0.0.1 49.0001
+isis-mocker> run mocker 1 0000.0000.0002 eth4 10.1.0.1 49.0001
+isis-mocker> run flood 0
+isis-mocker> run flood 1
 ```
 
 0003 - is router being mocked, so DUT is placed on its position in topology
