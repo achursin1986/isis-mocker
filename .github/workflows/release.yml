@@ -1,0 +1,46 @@
+name: 'isis-mocker'
+
+on:
+  push:
+    tag:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: true
+      - name: boost
+        run: sudo apt-get update && sudo apt-get install -yq build-essential cmake libboost-dev libboost-serialization-dev libboost-filesystem-dev libboost-iostreams-dev libboost-program-options-dev zlib1g-dev rapidjson-dev libquadmath0
+      - name: gtest 
+        run: |
+             sudo apt-get install git -y
+             chmod +x ./install_gtest.sh
+             ./install_gtest.sh
+      - name: build
+      - run: |      
+             cmake .
+             cmake --build . -j4
+             make package
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.run_number }}
+          release_name: Release ${{ github.run_number }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./*.deb
+          asset_name: isis-mocker_amd64.deb
+          asset_content_type: application/vnd.debian.binary-package
