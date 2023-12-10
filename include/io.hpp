@@ -129,8 +129,8 @@ class IO {
 			   SO_ATTACH_FILTER, &bpf_program, sizeof(bpf_program));
 	}
         IO(const IO& other) = delete;
-        IO(IO&& other) = default;
-        IO& operator=(IO&& other) = default; 
+        IO(IO&& other) = delete;
+        IO& operator=(IO&& other) = delete; 
 
 	void  do_receive() {
 		    socket_.async_receive_from(

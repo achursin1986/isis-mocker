@@ -35,7 +35,7 @@ class Tester {
                                                                  static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[1])) << 16 |
                                                                  static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[2])) << 8 |
                                                                  static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[3])); 
-                                                                 seq_num++;
+                                                                 seq_num+=1000;
                                                                   new_value[40] = seq_num & 0x000000ff;
                                                                   new_value[39] = (seq_num & 0x0000ff00) >> 8;
                                                                   new_value[38] = (seq_num & 0x00ff0000) >> 16;

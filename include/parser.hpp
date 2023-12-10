@@ -15,6 +15,7 @@
 #include "isis.hpp"
 #include "json.hpp"
 #include "utils.hpp"
+#include "base64pp.h"
 
 using json = nlohmann::json;
 
@@ -31,11 +32,14 @@ struct Router{
 typedef std::unordered_map<std::string, std::unique_ptr<struct Router>> auxdb;
 
 
-void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std::string& file_json) {
+void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std::unordered_map<std::string, std::string>& lsdb_raw, const std::string& file_json, const std::string& file_json_raw = std::string()) {
 	std::vector<std::string> keys;
 	std::ifstream f(file_json);
 	std::cout << "Parsing JSON ..." << std::endl;
 	json raw = json::parse(f);
+
+        // check if file exists , set bool , bool will be used by mocker to take db 
+
 
 	json data = raw["isis-database-information"][0]["isis-database"][1]["isis-database-entry"];
 	for (const auto& item : data) {
@@ -107,14 +111,16 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
                         auxdb[sys_id_temp].get()->HOSTNAME_ = hostname_str;
 			boost::erase_all(hostname_str, ".");
 			// boost::erase_all(hostname_str, "-");
-			std::unique_ptr<unsigned char[]> hostname_temp_ptr(new unsigned char[hostname_str.size()]{});
-			unsigned char* hostname_temp = hostname_temp_ptr.get();
+			//std::unique_ptr<unsigned char[]> hostname_temp_ptr(new unsigned char[hostname_str.size()]{});
+			//unsigned char* hostname_temp = hostname_temp_ptr.get();
                         #ifdef DEBUG                 
 			std::cout << "hostname: " << hostname_str << std::endl;
                         #endif
-			std::memcpy(hostname_temp, hostname_str.c_str(), hostname_str.size());
+			//std::memcpy(hostname_temp, hostname_str.c_str(), hostname_str.size());
 			hostname.tlv_length(hostname_str.size());
-			hostname.tlv_hostname(hostname_temp, hostname_str.size());
+			//hostname.tlv_hostname(hostname_temp, hostname_str.size());
+                        //hostname.tlv_hostname(reinterpret_cast<const unsigned char*>(hostname_str.c_str()), hostname_str.size());
+                        hostname.tlv_hostname(hostname_str);
 			/*eth_length += sizeof(hostname);
 			pdu_length += sizeof(hostname);  hostname is special as
 			not fixed, only caped by 255 bytes */
@@ -998,9 +1004,51 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 		std::string packet_str(boost::asio::buffers_begin(packet.data()),
 				       boost::asio::buffers_begin(packet.data()) + packet.size());
 
+
+
 		/* saving packet to db */
 		lsdb.insert(std::pair<std::string, std::string>(keys[i], packet_str));
 	}
+
+        // parse json-raw, lookup in auxdb, attach eth header, fill length          
+        if ( file_json_raw.length() ) {
+               std::ifstream f2(file_json_raw);
+               json raw2 = json::parse(f2);
+
+               json data2 = raw2["isis-database-information"][0]["isis-database"][1]["isis-database-entry"];
+               for (const auto& item : data2) {
+                       std::string hostname =  item["isis-packet"][0]["lsp-id"][0]["data"];
+                       for (int i=0; i<6; i++) hostname.pop_back();
+                       std::string lspid;
+                       for (const auto& k: auxdb ) { 
+                                if ( k.second.get()->HOSTNAME_ == hostname ) {
+                                              lspid = k.first;
+                                              break;
+                                }
+                       }                                       
+
+                       // eth header and convert body 
+                       std::string payload = item["isis-packet"][0]["isis-packet-base64"][0]["data"];
+                       std::vector<unsigned char> payload_decoded = *std::move(base64pp::decode(payload));
+                       std::string lsp_body(payload_decoded.begin(),payload_decoded.end());  
+                       // size of body and eth header 
+                       eth_header eth;                                                                                                        
+                       eth.length(3 + lsp_body.length());
+                       boost::asio::streambuf packet_raw;
+                       std::ostream os_raw(&packet_raw);
+                       os_raw << eth << lsp_body;
+                       std::string packet_raw_str(boost::asio::buffers_begin(packet_raw.data()),
+                                       boost::asio::buffers_begin(packet_raw.data()) + packet_raw.size());       
+
+                       lsdb_raw.insert(std::pair<std::string, std::string>(lspid, packet_raw_str));  
+                       
+               }
+                
+        
+
+
+        }
+
         std::cout << "done" << std::endl;
 	f.close();
 }

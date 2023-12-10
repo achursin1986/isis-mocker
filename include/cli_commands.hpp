@@ -3,6 +3,7 @@
 #include "mocker.hpp"
 #include "flooder.hpp"
 #include "fsm.hpp"
+#include <algorithm>
 #include <mutex>
 #include <stdio.h>
 
@@ -229,21 +230,42 @@ void reset_all(std::vector<std::unique_ptr<Mocker>>& mockers, std::vector<std::u
 }
 
 
-void prepare_test(std::unordered_map<std::string,std::string>& lsdb, std::unordered_map<std::string,std::string>& testdb, std::string& json2) {
+void prepare_test(std::unordered_map<std::string,std::string>& lsdb, std::unordered_map<std::string,std::string>& testdb, std::unordered_map<std::string,std::string>& lsdb_raw, std::string& json2, const std::string& json_file = std::string()) {
         testdb.clear(); 
-        std::unordered_map<std::string, std::string> LSDB2;
+        std::unordered_map<std::string, std::string> LSDB2,lsdb_raw2;  
         auxdb AUXDB2;
 
         try {
-            parse(LSDB2, AUXDB2, json2);                                      
+            /* if mocker was started with raw in mind turn processing to fill test db with RAW diff */ 
+ 
+            if ( json_file.length() ) parse(LSDB2, AUXDB2, lsdb_raw2, const_cast<std::string&>(json_file), json2);
+            else parse(LSDB2, AUXDB2, lsdb_raw2, json2);                                      
             std::cout << "Loaded json2" << std::endl;
-             malloc_trim(0);
+            malloc_trim(0);
+
+            if ( json_file.length() && json2.length() ) { 
+             for (auto i = lsdb_raw.begin(); i != lsdb_raw.end(); i++ ) {
+
+               auto size = std::min((*i).second.length(),lsdb_raw2[(*i).first].length());
+               bool diff{false};
+               for ( int j=42; j< int(size); j++ )  
+                     if (((*i).second)[j] != (lsdb_raw2[(*i).first])[j]) { diff = true; break; }
+               /* check if there is a diff */ 
+               if ( lsdb_raw2.count((*i).first) && (*i).second.length() != lsdb_raw2[(*i).first].length() && diff ) { 
+                    std::string tempkey = (*i).first;
+                    std::string temp  = lsdb_raw2[tempkey];
+                    testdb.insert(std::make_pair<std::string,std::string>(std::move(tempkey),std::move(temp)));
+               }
+            }
+
+            } else {
             for (auto i = lsdb.begin(); i != lsdb.end(); i++ ) { 
                if ( LSDB2.count((*i).first) && (*i).second != LSDB2[(*i).first] ) {
                     std::string tempkey = (*i).first;
                     std::string temp  = LSDB2[tempkey];  
                     testdb.insert(std::make_pair<std::string,std::string>(std::move(tempkey),std::move(temp)));
                }
+            }
             }
         
        if ( testdb.empty() ) std::cout << "No diff found" << std::endl; 

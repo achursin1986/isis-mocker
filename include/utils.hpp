@@ -3,6 +3,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/socket.h>
+#include <sys/ioctl.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <linux/if.h>
 
 #include <boost/algorithm/string.hpp>
 #include <cctype>
@@ -335,5 +340,27 @@ void incrSequenceNum(std::unordered_map<std::string, std::string>& LSDB, const s
 
 	return;
 }
+
+
+void interface_up(const char* ifname) { 
+      int sockfd;
+      struct ifreq ifr;
+
+      sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+
+      if (sockfd < 0)
+      return;
+
+      memset(&ifr, 0, sizeof ifr);
+      strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
+      ifr.ifr_flags |= IFF_UP;
+      ioctl(sockfd, SIOCSIFFLAGS, &ifr);
+} 
+
+
+
+
+
+
 
 

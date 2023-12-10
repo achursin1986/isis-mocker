@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10)
 project(isis-mocker CXX)
 
 set(MAJOR_VERSION 1)
-set(MINOR_VERSION 0)
+set(MINOR_VERSION 5)
 set(PATCH_VERSION 0)
 
 set(PROJECT_VERSION ${MAJOR_VERSION}.${MINOR_VERSION}.${PATCH_VERSION})
@@ -12,21 +12,21 @@ project(isis-mocker VERSION ${PROJECT_VERSION})
 configure_file(version.h.in include/version.h)
 
 add_executable(isis-mocker
-    main.cpp
+    main.cpp base64pp.cpp
 )
 add_executable(tests
     tests.cpp
 )
 
 add_executable(isis-mocker-debug
-    main.cpp
+    main.cpp base64pp.cpp
 )
 add_library(isis-mocker-version get_version.cpp)
 target_include_directories(isis-mocker-version PRIVATE include)
 
 
 target_include_directories(isis-mocker PRIVATE include)
-set_target_properties(isis-mocker PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+set_target_properties(isis-mocker PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads)
 set(Boost_USE_STATIC_LIBS   ON)
@@ -35,7 +35,7 @@ target_link_libraries(isis-mocker Threads::Threads  Boost::thread Boost::program
 
 
 target_include_directories(isis-mocker-debug PRIVATE include)
-set_target_properties(isis-mocker-debug PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+set_target_properties(isis-mocker-debug PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 target_link_libraries(isis-mocker-debug Threads::Threads Boost::thread Boost::program_options isis-mocker-version)
 
 
@@ -48,7 +48,7 @@ target_include_directories(isis-mocker-version PRIVATE include)
 find_package(GTest REQUIRED)
 include_directories(${GTEST_INCLUDE_DIRS})
 target_link_libraries(tests gmock gmock_main gtest pthread)
-set_target_properties(tests PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+set_target_properties(tests PROPERTIES CXX_STANDARD 20 CXX_STANDARD_REQUIRED ON)
 
 
 enable_testing()
