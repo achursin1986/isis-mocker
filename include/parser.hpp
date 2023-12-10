@@ -110,16 +110,10 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 			std::string hostname_str = std::string(data[i]["isis-tlv"][0]["hostname-tlv"][0]["hostname"][0]["data"]);
                         auxdb[sys_id_temp].get()->HOSTNAME_ = hostname_str;
 			boost::erase_all(hostname_str, ".");
-			// boost::erase_all(hostname_str, "-");
-			//std::unique_ptr<unsigned char[]> hostname_temp_ptr(new unsigned char[hostname_str.size()]{});
-			//unsigned char* hostname_temp = hostname_temp_ptr.get();
                         #ifdef DEBUG                 
 			std::cout << "hostname: " << hostname_str << std::endl;
                         #endif
-			//std::memcpy(hostname_temp, hostname_str.c_str(), hostname_str.size());
 			hostname.tlv_length(hostname_str.size());
-			//hostname.tlv_hostname(hostname_temp, hostname_str.size());
-                        //hostname.tlv_hostname(reinterpret_cast<const unsigned char*>(hostname_str.c_str()), hostname_str.size());
                         hostname.tlv_hostname(hostname_str);
 			/*eth_length += sizeof(hostname);
 			pdu_length += sizeof(hostname);  hostname is special as
@@ -169,7 +163,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 			os_tlvs << protocols_supported;
 		}
 
-		/* ip address tlv 132 */
+		/* ip address tlv 132 */ // refactor ! -> function , accept string 
 		if (!data[i]["isis-tlv"][0]["ipaddress-tlv"][0]["address"][0]["data"].is_null()) {
 			tlv_132 ip;
 			std::string ip_str = data[i]["isis-tlv"][0]["ipaddress-tlv"][0]["address"][0]["data"];
