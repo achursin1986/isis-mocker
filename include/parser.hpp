@@ -347,7 +347,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 								 "reachability-"
 								 "subtlv"][std::stoi(subitem.key())]["address"][0]["data"];
                                                         auxdb[sys_id_temp].get()->NEIGHBORS_[neighbor_map_str.substr(0,14)].first = ip_interface_addr_str;
-							unsigned char ip_interface_addr_array[4]{};  
+							unsigned char ip_interface_addr_array[4]{}; // here  
 							size_t ip_interface_addr_pos = 0;
 							std::string ip_interface_addr_delimiter = ".";
 							std::string ip_interface_addr_part_1{}, ip_interface_addr_part_2{},
@@ -391,7 +391,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 											       ["neighbor-"
 												"prefix"][0]["data"];
                                                         auxdb[sys_id_temp].get()->NEIGHBORS_[neighbor_map_str.substr(0,14)].second = neighbor_ip_addr_str;
-							unsigned char neighbor_ip_addr_array[4]{}; 
+							unsigned char neighbor_ip_addr_array[4]{}; // here  
 							size_t neighbor_ip_addr_pos = 0;
 							std::string neighbor_ip_addr_delimiter = ".";
 							std::string neighbor_ip_addr_part_1{}, neighbor_ip_addr_part_2{},
@@ -450,7 +450,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 							unsigned int local_ifindex = std::stol(local_ifindex_str);
 							unsigned int remote_ifindex = std::stol(remote_ifindex_str);
 							unsigned char local_ifindex_array[4]{}, remote_ifindex_array[4]{};
-							local_ifindex_array[3] = (local_ifindex >> 0) & 0xFF;
+							local_ifindex_array[3] = (local_ifindex >> 0) & 0xFF; // loop to reduce code 
 							local_ifindex_array[2] = (local_ifindex >> 8) & 0xFF;
 							local_ifindex_array[1] = (local_ifindex >> 16) & 0xFF;
 							local_ifindex_array[0] = (local_ifindex >> 24) & 0xFF;
@@ -492,7 +492,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 								[std::stoi(subitem.key())]["p2p-adj-sid-label"][0]["data"]);
 							if (isKthBitSet(adj_sid.flags(), 4) && isKthBitSet(adj_sid.flags(), 5)) {
 								adj_sid.subtlv_length(5);
-								unsigned char adj_label_array[3]{};
+								unsigned char adj_label_array[3]{}; // loop to reduce
 								adj_label_array[0] =
 								    static_cast<unsigned char>((std::stoi(adj_label, 0, 10) >> 16) & 0xFF);
 								adj_label_array[1] =
@@ -506,7 +506,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 								pdu_length += 7;
 							} else {
 								adj_sid.subtlv_length(6);
-								unsigned char adj_label_array[4]{};
+								unsigned char adj_label_array[4]{}; // loop to reduce
 								adj_label_array[0] =
 								    static_cast<unsigned char>((std::stoi(adj_label, 0, 10) >> 24) & 0xFF);
 								adj_label_array[1] =
@@ -732,7 +732,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 										pdu_length += 7;
 										sub_clv_length += 7;
 										ps.tlv_length(5);
-										unsigned char ps_label_array[3]{};
+										unsigned char ps_label_array[3]{}; // loop 
 										ps_label_array[0] = static_cast<unsigned char>(
 										    (std::stoi(ps_label, 0, 10) >> 16) & 0xFF);
 										ps_label_array[1] = static_cast<unsigned char>(
@@ -828,7 +828,7 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 				std::string s_range =
 				    std::string(data[i]["isis-tlv"][0]["rtr-capability-tlv"][0]["spring-capability-sub-tlv"][0]
 						    ["spring-capability-range"][0]["data"]);
-				unsigned char s_range_array[3]{};
+				unsigned char s_range_array[3]{};  // loop 
 				s_range_array[0] = static_cast<unsigned char>((std::stoi(s_range, 0, 10) >> 16) & 0xFF);
 				s_range_array[1] = static_cast<unsigned char>((std::stoi(s_range, 0, 10) >> 8) & 0xFF);
 				s_range_array[2] = static_cast<unsigned char>((std::stoi(s_range, 0, 10)) & 0xFF);

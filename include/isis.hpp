@@ -14,6 +14,7 @@ enum level { l1 = 0x1, l2 = 0x2, l12 = 0x3 };
 enum packet { p2p_hello = 17, l2_lsp = 20, l2_csnp = 25, l2_psnp = 27 };
 enum state { down = 2, init = 1, up = 0 };
 
+/* Supporting Funcs */
 
 class ops {
 
@@ -23,7 +24,18 @@ class ops {
                 rep[a] = static_cast<unsigned char>(n >> 8);
                 rep[b] = static_cast<unsigned char>(n & 0xFF);
         }
+        // func here eliminates allocs for unique_ptr 
+        void ip_to_bytes(std::string& ip_str , unsigned char* rep) { 
+        std::string ip_delimiter = ".";
+        size_t ip_pos{};
+        for ( int i=0; i<4; i++) {
+               if ( i == 3 ) { rep[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
+               ip_pos = ip_str.find(ip_delimiter);
+               rep[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
+               ip_str.erase(0, ip_pos + ip_delimiter.length());
+        }
 
+        }
 
 };
 

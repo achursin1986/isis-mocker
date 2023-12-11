@@ -229,7 +229,7 @@ bool IPv6Address::fromString(const char* addrstr) {
 	return 1;
 }
 
-std::unique_ptr<unsigned char[]> num_to_array(std::string& num_str, unsigned int size) {
+/*std::unique_ptr<unsigned char[]> num_to_array(std::string& num_str, unsigned int size) {
 	unsigned int num{};
 	if (!num_str.find("0x")) {
 		num_str.erase(0, 2);
@@ -244,7 +244,7 @@ std::unique_ptr<unsigned char[]> num_to_array(std::string& num_str, unsigned int
 		num_array[i] = (num >> (size - i - 1) * 8) & 0xFF;
 	}
 	return num_ptr;
-}
+}*/
 
 std::unique_ptr<unsigned char[]> area_to_bytes(std::string& area_str) {
 	std::string area_part1{}, area_part2{};
@@ -260,7 +260,7 @@ std::unique_ptr<unsigned char[]> area_to_bytes(std::string& area_str) {
 
 
 
-std::unique_ptr<unsigned char[]> prefix_to_bytes(std::string prefix) {
+std::unique_ptr<unsigned char[]> prefix_to_bytes(std::string& prefix) {
 	std::string prefix_delimiter = "/", delimiter = ".";
 	size_t pos = 0;
 	pos = prefix.find(prefix_delimiter);
@@ -288,7 +288,7 @@ std::unique_ptr<unsigned char[]> prefix_to_bytes(std::string prefix) {
 	return ip_ptr;
 }
 
-unsigned char prefix_length_to_bytes(std::string prefix) {
+unsigned char prefix_length_to_bytes(std::string& prefix) {
 	std::string prefix_delimiter = "/";
 	size_t pos = 0;
 	pos = prefix.find(prefix_delimiter);
@@ -296,7 +296,7 @@ unsigned char prefix_length_to_bytes(std::string prefix) {
 	return static_cast<unsigned char>(std::stoi(length));
 }
 
-std::unique_ptr<unsigned char[]> metric_to_bytes(std::string metric) {
+std::unique_ptr<unsigned char[]> metric_to_bytes(std::string& metric) {
 	unsigned int ip_metric = std::stoi(metric);
 	std::unique_ptr<unsigned char[]> ip_metric_ptr(new unsigned char[4]{});
 	unsigned char* ip_metric_array = ip_metric_ptr.get();
@@ -306,6 +306,25 @@ std::unique_ptr<unsigned char[]> metric_to_bytes(std::string metric) {
 	ip_metric_array[0] = static_cast<unsigned char>((ip_metric >> 24) & 0xFF);
 	return ip_metric_ptr;
 }
+
+// conversion str -> array, better to accept string in class   
+
+std::unique_ptr<unsigned char[]> ip_to_bytes(std::string& ip_str) {       
+        std::unique_ptr<unsigned char[]> ip_ptr(new unsigned char[4]{});
+        unsigned char* ip_array = ip_ptr.get();
+        std::string ip_delimiter = ".";
+        size_t ip_pos{};
+        for ( int i=0; i<4; i++) {
+               if ( i == 3 ) { ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
+               ip_pos = ip_str.find(ip_delimiter);
+               ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
+               ip_str.erase(0, ip_pos + ip_delimiter.length());
+         }
+         return ip_ptr;
+
+}
+
+
 
 bool isKthBitSet(unsigned char n, int k) {
 	if (n & (1 << k))
