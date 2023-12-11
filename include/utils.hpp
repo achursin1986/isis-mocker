@@ -229,22 +229,6 @@ bool IPv6Address::fromString(const char* addrstr) {
 	return 1;
 }
 
-/*std::unique_ptr<unsigned char[]> num_to_array(std::string& num_str, unsigned int size) {
-	unsigned int num{};
-	if (!num_str.find("0x")) {
-		num_str.erase(0, 2);
-		num = std::stol(num_str, 0, 16);
-	} else {
-		num = std::stol(num_str);
-	}
-
-	std::unique_ptr<unsigned char[]> num_ptr(new unsigned char[size]{});
-	unsigned char* num_array = num_ptr.get();
-	for (unsigned int i = 0; i < size; i++) {
-		num_array[i] = (num >> (size - i - 1) * 8) & 0xFF;
-	}
-	return num_ptr;
-}*/
 
 std::unique_ptr<unsigned char[]> area_to_bytes(std::string& area_str) {
 	std::string area_part1{}, area_part2{};
