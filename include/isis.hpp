@@ -16,26 +16,33 @@ enum state { down = 2, init = 1, up = 0 };
 
 /* Supporting Funcs */
 
+template <int N, class T>
 class ops {
 
      protected:
-        unsigned short decode(int a, int b, const unsigned char* rep) const { return (rep[a] << 8) + rep[b]; }
-        void encode(int a, int b, unsigned short n, unsigned char* rep) {
-                rep[a] = static_cast<unsigned char>(n >> 8);
-                rep[b] = static_cast<unsigned char>(n & 0xFF);
+        unsigned short decode(int a, int b) const { return (rep_[a] << 8) + rep_[b]; }
+        void encode(int a, int b, unsigned short n) {
+                rep_[a] = static_cast<unsigned char>(n >> 8);
+                rep_[b] = static_cast<unsigned char>(n & 0xFF);
         }
-        // func here eliminates allocs for unique_ptr 
-        void ip_to_bytes(std::string& ip_str , unsigned char* rep) { 
+        void ip_to_bytes(std::string& ip_str) { 
         std::string ip_delimiter = ".";
         size_t ip_pos{};
         for ( int i=0; i<4; i++) {
-               if ( i == 3 ) { rep[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
+               if ( i == 3 ) { rep_[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
                ip_pos = ip_str.find(ip_delimiter);
-               rep[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
+               rep_[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
                ip_str.erase(0, ip_pos + ip_delimiter.length());
+           }
         }
 
+        friend std::istream& operator>>(std::istream& is, T& header) { return is.read(reinterpret_cast<char*>(header.rep_), N); }
+
+        friend std::ostream& operator<<(std::ostream& os, const T& header) {
+                return os.write(reinterpret_cast<const char*>(header.rep_), N);
         }
+
+        unsigned char rep_[N];
 
 };
 
@@ -54,7 +61,7 @@ class ops {
      └────────────┴────────────┴────────────┴────────────┘
 */
 
-class isis_header : protected ops {
+class isis_header : public ops<8,isis_header> {
     public:
 	isis_header() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -73,14 +80,14 @@ class isis_header : protected ops {
 	unsigned char length_indicator() const { return rep_[1]; };
 	unsigned short size() const { return sizeof(rep_); };
 
-	friend std::istream& operator>>(std::istream& is, isis_header& header) { return is.read(reinterpret_cast<char*>(header.rep_), 8); }
+     //	friend std::istream& operator>>(std::istream& is, isis_header& header) { return is.read(reinterpret_cast<char*>(header.rep_), 8); }
+     
+     //	friend std::ostream& operator<<(std::ostream& os, const isis_header& header) {
+     //		return os.write(reinterpret_cast<const char*>(header.rep_), 8);
+     //	}
 
-	friend std::ostream& operator<<(std::ostream& os, const isis_header& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 8);
-	}
-
-    private:
-	unsigned char rep_[8];
+    //private:
+    //	unsigned char rep_[8];
 };
 
 /*
@@ -97,7 +104,7 @@ class isis_header : protected ops {
   └────────────┴─────────────────────────┴────────────┘
 */
 
-class isis_hello_header : protected ops{
+class isis_hello_header : public ops<12,isis_hello_header>{
     public:
 	isis_hello_header() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -107,26 +114,26 @@ class isis_hello_header : protected ops{
 
 	void circuit_type(unsigned char n) { rep_[0] = n; }
 	void system_id(unsigned char* n) { std::memcpy(&rep_[1], n, 6); }
-        void holding_timer(unsigned short n) { encode(7, 8, n, rep_); }
-        void pdu_length(unsigned short n) { encode(9, 10, n, rep_); }
+        void holding_timer(unsigned short n) { encode(7, 8, n); }
+        void pdu_length(unsigned short n) { encode(9, 10, n); }
 
 
 	void local_circuit_id(unsigned char n) { rep_[11] = n; }
 
 	unsigned char* system_id() { return &rep_[1]; };
-        unsigned short holding_timer() const { return decode(7, 8,rep_); };
-        unsigned short pdu_length() const { return decode(9, 10,rep_); };
+        unsigned short holding_timer() const { return decode(7, 8); };
+        unsigned short pdu_length() const { return decode(9, 10); };
 
-	friend std::istream& operator>>(std::istream& is, isis_hello_header& header) {
-		return is.read(reinterpret_cast<char*>(header.rep_), 12);
-	}
+     //	friend std::istream& operator>>(std::istream& is, isis_hello_header& header) {
+     //		return is.read(reinterpret_cast<char*>(header.rep_), 12);
+     //	}
 
-	friend std::ostream& operator<<(std::ostream& os, const isis_hello_header& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 12);
-	}
+     //	friend std::ostream& operator<<(std::ostream& os, const isis_hello_header& header) {
+     //		return os.write(reinterpret_cast<const char*>(header.rep_), 12);
+     //	}
 
-    private:
-	unsigned char rep_[12];
+    //private:
+    //	unsigned char rep_[12];
 };
 
 /*
@@ -156,23 +163,23 @@ class isis_hello_header : protected ops{
                       ...
  */
 
-class isis_psnp_header : protected ops {
+class isis_psnp_header : public ops<8,isis_psnp_header> {
     public:
         isis_psnp_header() { std::fill(rep_, rep_ + sizeof(rep_), 0); }
 
         unsigned char* system_id() { return &rep_[2]; };
-        unsigned short pdu_length() const { return decode(0, 1, rep_); };
+        unsigned short pdu_length() const { return decode(0, 1); };
 
-        friend std::istream& operator>>(std::istream& is, isis_psnp_header& header) {
-                return is.read(reinterpret_cast<char*>(header.rep_), 8);
-        }
+    //    friend std::istream& operator>>(std::istream& is, isis_psnp_header& header) {
+    //            return is.read(reinterpret_cast<char*>(header.rep_), 8);
+    //    }
 
-        friend std::ostream& operator<<(std::ostream& os, const isis_psnp_header& header) {
-                return os.write(reinterpret_cast<const char*>(header.rep_), 8);
-        }
+    //    friend std::ostream& operator<<(std::ostream& os, const isis_psnp_header& header) {
+    //            return os.write(reinterpret_cast<const char*>(header.rep_), 8);
+    //    }
 
-    private:
-        unsigned char rep_[8];
+    //private:
+    //    unsigned char rep_[8];
 };
 
 
@@ -204,7 +211,7 @@ class isis_psnp_header : protected ops {
                 ...              x   LSP entries TLV9
  */
 
-class isis_csnp_header : protected ops {
+class isis_csnp_header : public ops<25,isis_csnp_header> {
     public:
         isis_csnp_header() {
                 std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -212,23 +219,23 @@ class isis_csnp_header : protected ops {
                 end_lsp_id(END_LSP_ID);
         }
 
-        void pdu_length(unsigned short n) { encode(0, 1, n, rep_); }
+        void pdu_length(unsigned short n) { encode(0, 1, n); }
         void source_id(unsigned char* n) { std::memcpy(&rep_[2], n, 7); }
         void start_lsp_id(unsigned char* n) { std::memcpy(&rep_[9], n, sizeof(START_LSP_ID)); }
         void end_lsp_id(unsigned char* n) { std::memcpy(&rep_[18], n, sizeof(END_LSP_ID)); }
 
-        unsigned short pdu_length() const { return decode(0, 1, rep_); };
+        unsigned short pdu_length() const { return decode(0, 1); };
 
-        friend std::istream& operator>>(std::istream& is, isis_csnp_header& header) {
-                return is.read(reinterpret_cast<char*>(header.rep_), 25);
-        }
+    //    friend std::istream& operator>>(std::istream& is, isis_csnp_header& header) {
+    //            return is.read(reinterpret_cast<char*>(header.rep_), 25);
+    //    }
 
-        friend std::ostream& operator<<(std::ostream& os, const isis_csnp_header& header) {
-                return os.write(reinterpret_cast<const char*>(header.rep_), 25);
-        }
+    //    friend std::ostream& operator<<(std::ostream& os, const isis_csnp_header& header) {
+    //            return os.write(reinterpret_cast<const char*>(header.rep_), 25);
+    //    }
 
-    private:
-        unsigned char rep_[25];
+    //private:
+    //    unsigned char rep_[25];
 };
 
 
@@ -253,30 +260,30 @@ class isis_csnp_header : protected ops {
                     ...   TLVs
 */
 
-class isis_lsp_header : protected ops {
+class isis_lsp_header : public ops<19,isis_lsp_header> {
     public:
         isis_lsp_header() {
                 std::fill(rep_, rep_ + sizeof(rep_), 0);
                 type_block(0x3);
         }
 
-        void pdu_length(unsigned short n) { encode(0, 1, n, rep_); }
-        void remaining_lifetime(unsigned short n) { encode(2, 3, n, rep_); }
+        void pdu_length(unsigned short n) { encode(0, 1, n); }
+        void remaining_lifetime(unsigned short n) { encode(2, 3, n); }
         void lsp_id(unsigned char* n) { std::memcpy(&rep_[4], n, sizeof(START_LSP_ID)); }
         void sequence_num(unsigned char* n) { std::memcpy(&rep_[12], n, 4); }
-        void checksum(unsigned short n) { encode(16, 17, n, rep_); }
+        void checksum(unsigned short n) { encode(16, 17, n); }
         void type_block(unsigned char n) { rep_[18] = n; }
 
-        friend std::istream& operator>>(std::istream& is, isis_lsp_header& header) {
-                return is.read(reinterpret_cast<char*>(header.rep_), 19);
-        }
+    //    friend std::istream& operator>>(std::istream& is, isis_lsp_header& header) {
+    //            return is.read(reinterpret_cast<char*>(header.rep_), 19);
+    //    }
 
-        friend std::ostream& operator<<(std::ostream& os, const isis_lsp_header& header) {
-                return os.write(reinterpret_cast<const char*>(header.rep_), 19);
-        }
+   //     friend std::ostream& operator<<(std::ostream& os, const isis_lsp_header& header) {
+   //             return os.write(reinterpret_cast<const char*>(header.rep_), 19);
+   //     }
 
-    private:
-        unsigned char rep_[19];
+    //private:
+    //    unsigned char rep_[19];
 };
 
 
@@ -303,7 +310,7 @@ class isis_lsp_header : protected ops {
   └────────────┘
 */
 
-class eth_header : protected ops {
+class eth_header : public ops<17,eth_header> {
     /* llc is included and filled with defaults  */
     public:
         eth_header() {
@@ -317,22 +324,22 @@ class eth_header : protected ops {
 
         void destination(unsigned char* n) { std::memcpy(&rep_[0], n, sizeof(ALL_ISS)); }
         void source(unsigned char* n) { std::memcpy(&rep_[6], n, sizeof(OUR_MAC)); }
-        void length(unsigned short n) { encode(12, 13, n, rep_); }
+        void length(unsigned short n) { encode(12, 13, n); }
         void dsap(unsigned char n) { rep_[14] = n; }
         void ssap(unsigned char n) { rep_[15] = n; }
         void control_field(unsigned char n) { rep_[16] = n; }
 
-        unsigned short length() const { return decode(12, 13,rep_); };
+        unsigned short length() const { return decode(12, 13); };
         unsigned char* dmac() { return &rep_[0]; };
 
-        friend std::istream& operator>>(std::istream& is, eth_header& header) { return is.read(reinterpret_cast<char*>(header.rep_), 17); }
+    //    friend std::istream& operator>>(std::istream& is, eth_header& header) { return is.read(reinterpret_cast<char*>(header.rep_), 17); }
 
-        friend std::ostream& operator<<(std::ostream& os, const eth_header& header) {
-                return os.write(reinterpret_cast<const char*>(header.rep_), 17);
-        }
+   //     friend std::ostream& operator<<(std::ostream& os, const eth_header& header) {
+   //             return os.write(reinterpret_cast<const char*>(header.rep_), 17);
+   //     }
 
-    private:
-        unsigned char rep_[17];
+    //private:
+    //    unsigned char rep_[17];
 };
 
 
@@ -581,7 +588,7 @@ class tlv_137 {
 
 /* Originating buffer size  */
 
-class tlv_14 : protected ops {
+class tlv_14 : public ops<4,tlv_14> {
     public:
 	tlv_14() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -590,15 +597,15 @@ class tlv_14 : protected ops {
 	}
 	void tlv_type(unsigned char n) { rep_[0] = n; }
 	void tlv_length(unsigned char n) { rep_[1] = n; }
-	void set_size(unsigned short n) { encode(2, 3, n, rep_); }
-	friend std::istream& operator>>(std::istream& is, tlv_14& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
+	void set_size(unsigned short n) { encode(2, 3, n); }
+    //	friend std::istream& operator>>(std::istream& is, tlv_14& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
 
-	friend std::ostream& operator<<(std::ostream& os, const tlv_14& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
-	}
+    //	friend std::ostream& operator<<(std::ostream& os, const tlv_14& header) {
+    //		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
+    //	}
 
-    private:
-	unsigned char rep_[4];
+    //private:
+    //	unsigned char rep_[4];
 };
 
 /* Protocols supported tlv129 > 1*/
@@ -1225,27 +1232,27 @@ class tlv_229 {
 	unsigned char rep_[2];
 };
 
-class tlv_229_topology : protected ops {
+class tlv_229_topology : public ops<2,tlv_229_topology> {
     public:
 	tlv_229_topology() { std::fill(rep_, rep_ + sizeof(rep_), 0); }
 
-	void topology(unsigned short n) { encode(0, 1, n, rep_); }
+	void topology(unsigned short n) { encode(0, 1, n); }
 
-	friend std::istream& operator>>(std::istream& is, tlv_229_topology& header) {
-		return is.read(reinterpret_cast<char*>(header.rep_), 2);
-	}
+     //	friend std::istream& operator>>(std::istream& is, tlv_229_topology& header) {
+    //		return is.read(reinterpret_cast<char*>(header.rep_), 2);
+    //	}
 
-	friend std::ostream& operator<<(std::ostream& os, const tlv_229_topology& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 2);
-	}
+    //	friend std::ostream& operator<<(std::ostream& os, const tlv_229_topology& header) {
+    //		return os.write(reinterpret_cast<const char*>(header.rep_), 2);
+    //	}
 
-    private:
-	unsigned char rep_[2];
+    //private:
+    //	unsigned char rep_[2];
 };
 
 /* MT IS tlv 222 */
 
-class tlv_222 : protected ops {
+class tlv_222 : public ops<15,tlv_222> {
     public:
 	tlv_222() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -1254,24 +1261,24 @@ class tlv_222 : protected ops {
 
 	void tlv_type(unsigned char n) { rep_[0] = n; }
 	void tlv_length(unsigned char n) { rep_[1] = n; }
-	void topology_id(unsigned short n) { encode(2, 3, n, rep_); }
+	void topology_id(unsigned short n) { encode(2, 3, n); }
 	void neighbor_sysid(unsigned char* n) { std::memcpy(rep_ + 4, n, 7); }
 	void metric(unsigned char* n) { std::memcpy(rep_ + 11, n, 3); }
 	void subclv_length(unsigned char n) { rep_[14] = n; }
 
-	friend std::istream& operator>>(std::istream& is, tlv_222& header) { return is.read(reinterpret_cast<char*>(header.rep_), 15); }
+	//friend std::istream& operator>>(std::istream& is, tlv_222& header) { return is.read(reinterpret_cast<char*>(header.rep_), 15); }
 
-	friend std::ostream& operator<<(std::ostream& os, const tlv_222& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 15);
-	}
+     //	friend std::ostream& operator<<(std::ostream& os, const tlv_222& header) {
+     //		return os.write(reinterpret_cast<const char*>(header.rep_), 15);
+     //	}
 
-    private:
-	unsigned char rep_[15];
+    //private:
+    //	unsigned char rep_[15];
 };
 
 /* MT ipv4 tlv 235 */
 
-class tlv_235 : protected ops {
+class tlv_235 : public ops<4,tlv_235> {
     public:
 	tlv_235() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -1280,22 +1287,22 @@ class tlv_235 : protected ops {
 
 	void tlv_type(unsigned char n) { rep_[0] = n; }
 	void tlv_length(unsigned char n) { rep_[1] = n; }
-	void topology_id(unsigned short n) { encode(2, 3, n, rep_); }
+	void topology_id(unsigned short n) { encode(2, 3, n); }
 
-	friend std::istream& operator>>(std::istream& is, tlv_235& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
+	//friend std::istream& operator>>(std::istream& is, tlv_235& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
 
-	friend std::ostream& operator<<(std::ostream& os, const tlv_235& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
-	}
+	//friend std::ostream& operator<<(std::ostream& os, const tlv_235& header) {
+        //		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
+	//}
 
-    private:
-	unsigned char rep_[4];
+    //private:
+    //	unsigned char rep_[4];
 };
 
 
 /* MT ipv6 tlv 237 */
 
-class tlv_237 : protected ops {
+class tlv_237 : public ops<4,tlv_237> {
     public:
 	tlv_237() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -1304,16 +1311,16 @@ class tlv_237 : protected ops {
 
 	void tlv_type(unsigned char n) { rep_[0] = n; }
 	void tlv_length(unsigned char n) { rep_[1] = n; }
-	void topology_id(unsigned short n) { encode(2, 3, n, rep_); }
+	void topology_id(unsigned short n) { encode(2, 3, n); }
 
-	friend std::istream& operator>>(std::istream& is, tlv_237& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
+     //	friend std::istream& operator>>(std::istream& is, tlv_237& header) { return is.read(reinterpret_cast<char*>(header.rep_), 4); }
 
-	friend std::ostream& operator<<(std::ostream& os, const tlv_237& header) {
-		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
-	}
+     //	friend std::ostream& operator<<(std::ostream& os, const tlv_237& header) {
+     //		return os.write(reinterpret_cast<const char*>(header.rep_), 4);
+     //	}
 
-    private:
-	unsigned char rep_[4];
+    //private:
+    //	unsigned char rep_[4];
 };
 
 
