@@ -157,7 +157,6 @@ class IO {
 				    (std::istreambuf_iterator<char>(&temp)),
 				    std::istreambuf_iterator<char>()));
                             #endif
-                            //do_receive();
 		    });
 	}
 
@@ -169,7 +168,6 @@ class IO {
 	boost::asio::streambuf* get_data() { return &data_; };
 
         void do_stop() {
-             //socket_.cancel();
              socket_.close();     
 
         }
