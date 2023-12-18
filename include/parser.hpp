@@ -104,8 +104,8 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 		os_checksum << isis << lsp_header; 
                 /* checksum and length here is 0 */
 		/* TLVs  */
-		/* hostname tlv */
-		if (!data[i]["isis-tlv"][0]["hostname-tlv"][0]["hostname"][0]["data"].is_null()) {
+		/* hostname tlv */ 
+	        if (!data[i]["isis-tlv"][0]["hostname-tlv"][0]["hostname"][0]["data"].is_null()) {
 			tlv_137 hostname;
 			std::string hostname_str = std::string(data[i]["isis-tlv"][0]["hostname-tlv"][0]["hostname"][0]["data"]);
                         auxdb[sys_id_temp].get()->HOSTNAME_ = hostname_str;
@@ -114,15 +114,15 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 			std::cout << "hostname: " << hostname_str << std::endl;
                         #endif
 			hostname.tlv_length(hostname_str.size());
-                        hostname.tlv_hostname(hostname_str);
+                        hostname.tlv_hostname(hostname_str); 
 			/*eth_length += sizeof(hostname);
 			pdu_length += sizeof(hostname);  hostname is special as
 			not fixed, only caped by 255 bytes */
-			eth_length += hostname_str.size() + 2;
+                 	eth_length += hostname_str.size() + 2;
 			pdu_length += hostname_str.size() + 2;
 			os_checksum << hostname;
 			os_tlvs << hostname;
-		}
+		} 
 
 		/* buffer size tlv */
 		if (!data[i]["isis-tlv"][0]["lsp-buffer-size-tlv"][0]["lsp-buffer-size"][0]["data"].is_null()) {
@@ -663,10 +663,6 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, std
 
 							unsigned char flags = prefix_length_to_bytes(ip_prefix);
                                                         /* save to aux db */
-                                                        /*maskdb[std::string(reinterpret_cast<char*>(lsp_id_packed), 6)]
-                                                             [std::string(reinterpret_cast<char*>(ip_prefix_array.get()), 4)] 
-                                                              = int(flags);*/
-
 							if (std::string(data[i]["isis-tlv"][0][key_str][std::stoi(subitem.key())]["prefix-"
 																  "status"]
 									    [0]["data"]) == "down") {
