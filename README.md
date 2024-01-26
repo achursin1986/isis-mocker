@@ -99,11 +99,7 @@ set protocols mpls interface all
 
 Sample run:
 ```
-root@salt:/var/tmp/testing# isis-mocker --ifnames eth3 eth4 eth5 --json-file full.json --json-file-raw raw.json --json-hostname hostname.json 
-
-json-file-raw is the file made by output from base64 Junos command which is supported only in latest releases
-hostname.json is output from "show isis hostname | display json" command
-
+root@salt:/var/tmp/testing# isis-mocker --ifnames eth3 eth4 eth5 --json-file full.json --json-file-raw raw.json --json-hostname hostname.json* 
 
   ___ ____ ___ ____        __  __  ___   ____ _  _______ ____
  |_ _/ ___|_ _/ ___|      |  \/  |/ _ \ / ___| |/ / ____|  _ \
@@ -179,6 +175,11 @@ IPV4 Unicast        2 100.00% 100.00%      100.00%            100.00%  0.00%    
 
 
 ```
+*
+json-file-raw is the file made by output from base64 Junos command which is supported only in latest releases
+hostname.json is output from "show isis hostname | display json" command
+
+
 
 #### License and deps
 
