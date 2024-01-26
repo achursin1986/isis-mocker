@@ -33,17 +33,18 @@ using namespace cli;
 namespace bpo = boost::program_options;
 
 bool DEBUG_PRINT = false;
-bool USE_RAW = false;
 
 int main(int argc, char* argv[]) {
     std::mutex db_mtx;
-    std::unordered_map<std::string, std::string> LSDB, LSDB2, LSDB_RAW, TESTDB;
+    std::unordered_map<std::string, std::string> LSDB, LSDB2, TESTDB;
     auxdb AUXDB;
     std::pair<std::string,std::string> mocked_lsp;
     std::unordered_set<std::string> used_ifnames;
     std::unordered_set<int> used_ids;
     std::vector<std::string> ifnames;
-    std::string json_file,json_file_raw;
+    std::string json_file,json_file_raw,json_file_hostname;
+ 
+
     try {
            bpo::options_description desc("options");
 
@@ -51,7 +52,8 @@ int main(int argc, char* argv[]) {
                     ("help", "show help")
                     ("ifnames", bpo::value<std::vector<std::string>>(&ifnames)->multitoken()->required(), "interface names, required")
                     ("json-file", bpo::value<std::string>(&json_file)->required(), "json input file, required")
-                    ("json-file-raw", bpo::value<std::string>(&json_file_raw), "json input file")
+                    ("json-file-raw", bpo::value<std::string>(&json_file_raw)->required(), "json input file, required")
+                    ("json-hostname", bpo::value<std::string>(&json_file_hostname)->required(), "json input file, required")
                 ;
 
 
@@ -84,10 +86,9 @@ int main(int argc, char* argv[]) {
 
     try {
 
-        parse(LSDB, AUXDB, LSDB_RAW, json_file, json_file_raw);
+        parse(LSDB, AUXDB, json_file, json_file_raw, json_file_hostname);
         LSDB2 = LSDB;
-         malloc_trim(0);
-         if ( json_file_raw.length() ) USE_RAW = true; 
+        malloc_trim(0);
 
         /* bringing allocated interfaces up */ 
          for(const auto& k: ifnames) { 
@@ -101,6 +102,8 @@ int main(int argc, char* argv[]) {
 
     }
 
+
+    /* init containers and start FSM park */
 
     std::vector<std::unique_ptr<Mocker>> Mockers;
     std::vector<std::unique_ptr<Flooder>> Flooders;
@@ -134,18 +137,15 @@ int main(int argc, char* argv[]) {
          runMenu->Insert("mocker",{"x xxxx.xxxx.xxxx ethx xx.xx.xx.xx xx.xxxx"},[&Mockers,&ifnames,&used_ifnames,&used_ids,&mocked_lsp](std::ostream& out, int id, 
          const std::string& sysid, const std::string& ifname, const std::string& ip, const std::string& area)
                             { mocker_start(id,ifname, sysid,area,ip,Mockers,ifnames,used_ifnames,used_ids, mocked_lsp); },"start mocker instance");
-
-          runMenu->Insert("flood",{"x"},[&LSDB,&LSDB_RAW,&Mockers,&Flooders](std::ostream& out, int id )
-                                                                  {   if ( USE_RAW ) flood_start(id,LSDB_RAW,Flooders,Mockers);                    
-                                                                      else flood_start(id,LSDB,Flooders,Mockers);  }, "start flood");
-          runMenu->Insert("test",{"x(id) x(msec 50 ... 5000)"},[&LSDB,&TESTDB,&LSDB_RAW,&Mockers,&Flooders,&Testers](std::ostream& out, int id, int test_interval )
-                                                                  { if ( USE_RAW) test_start(id,LSDB_RAW,TESTDB,Flooders,Mockers,Testers,test_interval);
-                                                                     else test_start(id,LSDB,TESTDB,Flooders,Mockers,Testers,test_interval);  }, "start test");
+          
+          runMenu->Insert("flood",{"x"},[&LSDB,&Mockers,&Flooders](std::ostream& out, int id )
+                                                                  { flood_start(id,LSDB,Flooders,Mockers);  }, "start flood");
+          runMenu->Insert("test",{"x(id) x(msec 50 ... 5000)"},[&LSDB,&TESTDB,&Mockers,&Flooders,&Testers](std::ostream& out, int id, int test_interval )
+                                                                  { test_start(id,LSDB,TESTDB,Flooders,Mockers,Testers,test_interval);  }, "start test");
 
 
-          loadMenu->Insert("json2",{"filename"},[&TESTDB,&LSDB2,&LSDB_RAW,&json_file](std::ostream& out, const std::string& json2) 
-                                     { if (USE_RAW )  prepare_test(LSDB2,TESTDB, LSDB_RAW, const_cast<std::string&>(json2), json_file);
-                                       else prepare_test(LSDB2,TESTDB, LSDB_RAW, const_cast<std::string&>(json2));  }, "load json2 file");
+          loadMenu->Insert("json2",{"filename"},[&TESTDB,&LSDB2,&json_file,&json_file_hostname](std::ostream& out, const std::string& json2) 
+                                     { prepare_test(LSDB2,TESTDB, json_file, const_cast<std::string&>(json2),json_file_hostname); }, "load json2 raw file");
 
 
           debugMenu->Insert("on",[](std::ostream& out) { DEBUG_PRINT = true;  }, "debug on");

@@ -1,12 +1,11 @@
 # isis-mocker
 
-Tool provides an ability to load ISIS protocol(RFC 1195) database in json format to lab router and emulate that network for the router.
-_ONLY_ L2 P2P adjacency supported and Linux OS. To get input json file in correct format see details below.
+Tool provides an ability to load ISIS protocol(RFC 1195) database in json format to a lab router and emulate the whole ISIS network for the router under test(DUT).
+_ONLY_ L2 P2P adjacency supported and Linux OS. 
 
 #### Features supported
-* Base ISIS protocol structs
-* IPv4 reachability
-* Basic SR
+* P2P peering with no MT 
+* no limit on database contents as we load raw export
 
 
 #### Encoded params
@@ -70,24 +69,8 @@ isis-mocker> run flood 1
 then 2 instances of flood start to load isis database to DUT 
 
 
-
-
-#### JSON preparation
-* Get 2 outputs from Junos router:
-    show isis database extensive | display json | no-more
-    show isis hostname | display json | no-more
-
-*  Use py script to create json in the correct format*, for example
-   ./convert-showisisdb.py --filepath \`pwd\` --hosts jtac-hosts-isis-json.txt --sourcedb jtac-db-isis-json.txt --output out.json
-
-*  Run the program providing json file and nic name, for example:
-   ./isis-mocker eth1 out.json
-
-\* Junos implementation of isis json export for older releases produces duplicate json keys(not recommended by standard), also lsp-ids are exported as hostnames.
-
-
 #### Sample outputs
-DUT(device under test) router config example:
+DUT config example:
 ```
 Junos:
 
@@ -116,7 +99,11 @@ set protocols mpls interface all
 
 Sample run:
 ```
-root@salt:/var/tmp/testing# isis-mocker --ifnames eth3 eth4 eth5 --json-file out.json
+root@salt:/var/tmp/testing# isis-mocker --ifnames eth3 eth4 eth5 --json-file full.json --json-file-raw raw.json --json-hostname hostname.json 
+
+*** json-file-raw is the file made by output from base64 Junos command which is supported only in latest releases ***
+*** hostname.json is output from "show isis hostname | display json" command ***
+
 
   ___ ____ ___ ____        __  __  ___   ____ _  _______ ____
  |_ _/ ___|_ _/ ___|      |  \/  |/ _ \ / ___| |/ / ____|  _ \
@@ -193,10 +180,9 @@ IPV4 Unicast        2 100.00% 100.00%      100.00%            100.00%  0.00%    
 
 ```
 
-
 #### License and deps
 
 libc6 (>= 2.14), libgcc-s1 (>= 3.0), libstdc++6 (>= 9)
 
-Jun 2023. Application isis-mocker is an Open Source software. 
+Jan 2024. Application isis-mocker is an Open Source software. 
 It is distributed under the terms of the MIT license. CLI lib uses Boost license.

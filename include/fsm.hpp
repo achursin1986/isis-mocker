@@ -146,7 +146,9 @@ void Down<id>::react(ISIS_PKT& e) {
                 payload_3.area_length(e.params->area_size);
                 payload_3.tlv_length(e.params->area_size+1);
                 
-
+ 
+                /* MT so far not tested with raw db but should be ok to add */
+ 
                  /* payload_4 
                 tlv_229 mt;
                 tlv_229_topology ipv4_topo;

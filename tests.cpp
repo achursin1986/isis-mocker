@@ -56,13 +56,12 @@ TEST(structs, eth_header) {
 }
 
 TEST(funcs, ip_to_bytes) {
-        std::string ip_str = "192.168.1.10";
-        unsigned char expected[] = { 0xc0, 0xa8, 0x01, 0x0a };
+        std::string ip_str = "10.3.0.0";
+        unsigned char expected[] = { 0xa, 0x3, 0x00, 0x00 };
         unsigned char ip_array[4]{};
         std::string ip_delimiter = ".";
         size_t ip_pos{};                
         for ( int i=0; i<4; i++) {
-               if ( i == 3 ) { ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
                ip_pos = ip_str.find(ip_delimiter);
                ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10)); 
                ip_str.erase(0, ip_pos + ip_delimiter.length());

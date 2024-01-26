@@ -17,6 +17,7 @@
 #include <streambuf>
 #include <regex>
 #include <algorithm>
+#include <span>
 
 std::ostream& render_printable_chars(std::ostream& os, const char* buffer, size_t bufsize) {
 	os << " | ";
@@ -147,90 +148,8 @@ uint16_t fletcher_checksum(uint8_t* buffer, const size_t len, const uint16_t off
 	return checksum;
 }
 
-class IPv6Address {
-    public:
-	IPv6Address();
 
-	bool fromString(const char* addrstr);
-	unsigned char* getAddr() { return &_address[0]; }
-
-	void print();
-
-    private:
-	unsigned char _address[16];
-} __attribute__((__packed__));
-
-IPv6Address::IPv6Address() { memset(_address, 0, sizeof(_address)); }
-
-#define MAX_IPV6_ADDRESS_STR_LEN 39
-
-static int8_t asciiToHex(char c) {
-	c |= 0x20;
-
-	if (c >= '0' && c <= '9') {
-		return c - '0';
-	} else if (c >= 'a' && c <= 'f') {
-		return (c - 'a') + 10;
-	} else {
-		return -1;
-	}
-}
-
-bool IPv6Address::fromString(const char* addrstr) {
-	uint16_t accumulator = 0;
-	uint8_t colon_count = 0;
-	uint8_t pos = 0;
-
-	memset(_address, 0, sizeof(_address));
-
-	// Step 1: look for position of ::, and count colons after it
-	for (uint8_t i = 1; i <= MAX_IPV6_ADDRESS_STR_LEN; i++) {
-		if (addrstr[i] == ':') {
-			if (addrstr[i - 1] == ':') {
-				// Double colon!
-				colon_count = 14;
-			} else if (colon_count) {
-				// Count backwards the number of colons after
-				// the ::
-				colon_count -= 2;
-			}
-		} else if (addrstr[i] == '\0') {
-			break;
-		}
-	}
-
-	// Step 2: convert from ascii to binary
-	for (uint8_t i = 0; i <= MAX_IPV6_ADDRESS_STR_LEN && pos < 16; i++) {
-		if (addrstr[i] == ':' || addrstr[i] == '\0') {
-			_address[pos] = accumulator >> 8;
-			_address[pos + 1] = accumulator;
-			accumulator = 0;
-
-			if (colon_count && i && addrstr[i - 1] == ':') {
-				pos = colon_count;
-			} else {
-				pos += 2;
-			}
-		} else {
-			int8_t val = asciiToHex(addrstr[i]);
-			if (val == -1) {
-				// Not hex or colon: fail
-				return 0;
-			} else {
-				accumulator <<= 4;
-				accumulator |= val;
-			}
-		}
-
-		if (addrstr[i] == '\0') break;
-	}
-
-	// Success
-	return 1;
-}
-
-
-std::unique_ptr<unsigned char[]> area_to_bytes(std::string& area_str) {
+std::unique_ptr<unsigned char[]> area_to_bytes(const std::string& area_str) {
 	std::string area_part1{}, area_part2{};
 	std::unique_ptr<unsigned char[]> area_ptr(new unsigned char[(area_str.length() / 2)]{});
 	for (size_t i = 0, j = 0; i < area_str.length() && j < area_str.length(); i += 2, j++) {
@@ -243,55 +162,7 @@ std::unique_ptr<unsigned char[]> area_to_bytes(std::string& area_str) {
 }
 
 
-
-std::unique_ptr<unsigned char[]> prefix_to_bytes(std::string& prefix) {
-	std::string prefix_delimiter = "/", delimiter = ".";
-	size_t pos = 0;
-	pos = prefix.find(prefix_delimiter);
-	std::string ip = prefix.substr(0, pos);
-	std::string length = prefix.substr(pos + 1);
-
-	std::string part_1{}, part_2{}, part_3{}, part_4{};
-
-	pos = ip.find(delimiter);
-	part_1 = ip.substr(0, pos);
-	ip.erase(0, pos + 1);
-	pos = ip.find(delimiter);
-	part_2 = ip.substr(0, pos);
-	ip.erase(0, pos + 1);
-	pos = ip.find(delimiter);
-	part_3 = ip.substr(0, pos);
-	ip.erase(0, pos + 1);
-	part_4 = ip;
-	std::unique_ptr<unsigned char[]> ip_ptr(new unsigned char[4]{});
-	unsigned char* ip_array = ip_ptr.get();
-	ip_array[0] = static_cast<unsigned char>(std::stoi(part_1, 0, 10));
-	ip_array[1] = static_cast<unsigned char>(std::stoi(part_2, 0, 10));
-	ip_array[2] = static_cast<unsigned char>(std::stoi(part_3, 0, 10));
-	ip_array[3] = static_cast<unsigned char>(std::stoi(part_4, 0, 10));
-	return ip_ptr;
-}
-
-unsigned char prefix_length_to_bytes(std::string& prefix) {
-	std::string prefix_delimiter = "/";
-	size_t pos = 0;
-	pos = prefix.find(prefix_delimiter);
-	std::string length = prefix.substr(pos + 1);
-	return static_cast<unsigned char>(std::stoi(length));
-}
-
-std::unique_ptr<unsigned char[]> metric_to_bytes(std::string& metric) {
-	unsigned int ip_metric = std::stoi(metric);
-	std::unique_ptr<unsigned char[]> ip_metric_ptr(new unsigned char[4]{});
-	unsigned char* ip_metric_array = ip_metric_ptr.get();
-	ip_metric_array[3] = static_cast<unsigned char>((ip_metric >> 0) & 0xFF);
-	ip_metric_array[2] = static_cast<unsigned char>((ip_metric >> 8) & 0xFF);
-	ip_metric_array[1] = static_cast<unsigned char>((ip_metric >> 16) & 0xFF);
-	ip_metric_array[0] = static_cast<unsigned char>((ip_metric >> 24) & 0xFF);
-	return ip_metric_ptr;
-}
-
-// conversion str -> array, better to accept string in class   
+/* not used in ISIS , but better to accept std::string there... */
 
 std::unique_ptr<unsigned char[]> ip_to_bytes(std::string& ip_str) {       
         std::unique_ptr<unsigned char[]> ip_ptr(new unsigned char[4]{});
@@ -299,7 +170,6 @@ std::unique_ptr<unsigned char[]> ip_to_bytes(std::string& ip_str) {
         std::string ip_delimiter = ".";
         size_t ip_pos{};
         for ( int i=0; i<4; i++) {
-               if ( i == 3 ) { ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
                ip_pos = ip_str.find(ip_delimiter);
                ip_array[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
                ip_str.erase(0, ip_pos + ip_delimiter.length());
@@ -310,14 +180,7 @@ std::unique_ptr<unsigned char[]> ip_to_bytes(std::string& ip_str) {
 
 
 
-bool isKthBitSet(unsigned char n, int k) {
-	if (n & (1 << k))
-		return true;
-	else
-		return false;
-}
-
-void incrSequenceNum(std::unordered_map<std::string, std::string>& LSDB, const std::string& key, const std::string& value) {
+void inc_sequence_num(std::unordered_map<std::string, std::string>& LSDB, const std::string& key, const std::string& value, int inc) {
 	std::string new_value = value;
 	std::string seq_num_str = value.substr(37, 4);
 
@@ -325,7 +188,7 @@ void incrSequenceNum(std::unordered_map<std::string, std::string>& LSDB, const s
 			       static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[1])) << 16 |
 			       static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[2])) << 8 |
 			       static_cast<unsigned int>(static_cast<unsigned char>(seq_num_str[3]));
-	seq_num++;
+	seq_num+=inc;
 	new_value[40] = seq_num & 0x000000ff;
 	new_value[39] = (seq_num & 0x0000ff00) >> 8;
 	new_value[38] = (seq_num & 0x00ff0000) >> 16;
@@ -359,11 +222,4 @@ void interface_up(const char* ifname) {
       ifr.ifr_flags |= IFF_UP;
       ioctl(sockfd, SIOCSIFFLAGS, &ifr);
 } 
-
-
-
-
-
-
-
 

@@ -3,6 +3,7 @@
 #include <cstring>
 #include <istream>
 #include <ostream>
+#include <span>
 
 static unsigned char ALL_ISS[6] = {0x09, 0x00, 0x2B, 0x00, 0x00, 0x05};
 static unsigned char OUR_MAC[6] = {0x00, 0x0c, 0x29, 0x6f, 0x14, 0xbf};
@@ -14,10 +15,9 @@ enum level { l1 = 0x1, l2 = 0x2, l12 = 0x3 };
 enum packet { p2p_hello = 17, l2_lsp = 20, l2_csnp = 25, l2_psnp = 27 };
 enum state { down = 2, init = 1, up = 0 };
 
-/* Base class  */
 
 template <int N, class T>
-class ops {
+class tlv {
 
      protected:
         unsigned short decode(int a, int b) const { return (rep_[a] << 8) + rep_[b]; }
@@ -25,7 +25,9 @@ class ops {
                 rep_[a] = static_cast<unsigned char>(n >> 8);
                 rep_[b] = static_cast<unsigned char>(n & 0xFF);
         }
-        void ip_to_bytes(std::string& ip_str) { 
+        /* possible option to accept str */
+
+        /*void ip_to_bytes(std::string& ip_str) { 
         std::string ip_delimiter = ".";
         size_t ip_pos{};
         for ( int i=0; i<4; i++) {
@@ -34,7 +36,7 @@ class ops {
                rep_[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
                ip_str.erase(0, ip_pos + ip_delimiter.length());
            }
-        }
+        }*/
 
         friend std::istream& operator>>(std::istream& is, T& header) { return is.read(reinterpret_cast<char*>(header.rep_), N); }
 
@@ -61,7 +63,7 @@ class ops {
      └────────────┴────────────┴────────────┴────────────┘
 */
 
-class isis_header : public ops<8,isis_header> {
+class isis_header : public tlv<8,isis_header> {
     public:
 	isis_header() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -96,7 +98,7 @@ class isis_header : public ops<8,isis_header> {
   └────────────┴─────────────────────────┴────────────┘
 */
 
-class isis_hello_header : public ops<12,isis_hello_header>{
+class isis_hello_header : public tlv<12,isis_hello_header>{
     public:
 	isis_hello_header() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -145,7 +147,7 @@ class isis_hello_header : public ops<12,isis_hello_header>{
                       ...
  */
 
-class isis_psnp_header : public ops<8,isis_psnp_header> {
+class isis_psnp_header : public tlv<8,isis_psnp_header> {
     public:
         isis_psnp_header() { std::fill(rep_, rep_ + sizeof(rep_), 0); }
 
@@ -183,7 +185,7 @@ class isis_psnp_header : public ops<8,isis_psnp_header> {
                 ...              x   LSP entries TLV9
  */
 
-class isis_csnp_header : public ops<25,isis_csnp_header> {
+class isis_csnp_header : public tlv<25,isis_csnp_header> {
     public:
         isis_csnp_header() {
                 std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -222,7 +224,7 @@ class isis_csnp_header : public ops<25,isis_csnp_header> {
                     ...   TLVs
 */
 
-class isis_lsp_header : public ops<19,isis_lsp_header> {
+class isis_lsp_header : public tlv<19,isis_lsp_header> {
     public:
         isis_lsp_header() {
                 std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -268,7 +270,7 @@ class isis_lsp_header : public ops<19,isis_lsp_header> {
   └────────────┘
 */
 
-class eth_header : public ops<17,eth_header> {
+class eth_header : public tlv<17,eth_header> {
     /* llc is included and filled with defaults  */
     public:
         eth_header() {
@@ -538,7 +540,7 @@ class tlv_137 {
 
 /* Originating buffer size  */
 
-class tlv_14 : public ops<4,tlv_14> {
+class tlv_14 : public tlv<4,tlv_14> {
     public:
 	tlv_14() {
 		std::fill(rep_, rep_ + sizeof(rep_), 0);
@@ -623,7 +625,8 @@ class tlv_232 {
 
 	void tlv_type(unsigned char n) { rep_[0] = n; }
 	void tlv_length(unsigned char n) { rep_[1] = n; }
-	void ip_address(unsigned char* n) { std::memcpy(rep_ + 2, n, 16); }
+	//void ip_address(const unsigned char* n)  { std::memcpy(rep_ + 2, n, 16); }
+        void  ip_address(const std::span<const unsigned char,16> n) { std::memcpy(rep_ + 2, n.data(), n.size()); }
 
 	friend std::istream& operator>>(std::istream& is, tlv_232& header) { return is.read(reinterpret_cast<char*>(header.rep_), 18); }
 
@@ -1161,7 +1164,7 @@ class tlv_1_ext {
 
 /* Multi topology tlv 229 */
 
-class tlv_229 : public ops<2,tlv_229> {
+class tlv_229 : public tlv<2,tlv_229> {
     public:
 	tlv_229() {
 		std::fill(rep_, rep_ + 2, 0);
@@ -1172,7 +1175,7 @@ class tlv_229 : public ops<2,tlv_229> {
 	void tlv_length(unsigned char n) { rep_[1] = n; }
 };
 
-class tlv_229_topology : public ops<2,tlv_229_topology> {
+class tlv_229_topology : public tlv<2,tlv_229_topology> {
     public:
 	tlv_229_topology() { std::fill(rep_, rep_ + 2, 0); }
 	void topology(unsigned short n) { encode(0, 1, n); }
@@ -1181,7 +1184,7 @@ class tlv_229_topology : public ops<2,tlv_229_topology> {
 
 /* MT IS tlv 222 */
 
-class tlv_222 : public ops<15,tlv_222> {
+class tlv_222 : public tlv<15,tlv_222> {
     public:
 	tlv_222() {
 		std::fill(rep_, rep_ + 15, 0);
@@ -1199,7 +1202,7 @@ class tlv_222 : public ops<15,tlv_222> {
 
 /* MT ipv4 tlv 235 */
 
-class tlv_235 : public ops<4,tlv_235> {
+class tlv_235 : public tlv<4,tlv_235> {
     public:
 	tlv_235() {
 		std::fill(rep_, rep_ + 4, 0);
@@ -1215,7 +1218,7 @@ class tlv_235 : public ops<4,tlv_235> {
 
 /* MT ipv6 tlv 237 */
 
-class tlv_237 : public ops<4,tlv_237> {
+class tlv_237 : public tlv<4,tlv_237> {
     public:
 	tlv_237() {
 		std::fill(rep_, rep_ + 4, 0);
