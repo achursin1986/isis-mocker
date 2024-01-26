@@ -25,18 +25,6 @@ class tlv {
                 rep_[a] = static_cast<unsigned char>(n >> 8);
                 rep_[b] = static_cast<unsigned char>(n & 0xFF);
         }
-        /* possible option to accept str */
-
-        /*void ip_to_bytes(std::string& ip_str) { 
-        std::string ip_delimiter = ".";
-        size_t ip_pos{};
-        for ( int i=0; i<4; i++) {
-               if ( i == 3 ) { rep_[i] = static_cast<unsigned char>(std::stoi(ip_str), 0, 10); break; }
-               ip_pos = ip_str.find(ip_delimiter);
-               rep_[i] = static_cast<unsigned char>(std::stoi(ip_str.substr(0, ip_pos), 0, 10));
-               ip_str.erase(0, ip_pos + ip_delimiter.length());
-           }
-        }*/
 
         friend std::istream& operator>>(std::istream& is, T& header) { return is.read(reinterpret_cast<char*>(header.rep_), N); }
 
