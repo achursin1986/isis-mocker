@@ -185,46 +185,42 @@ Trying 192.168.178.152...
 Connected to 192.168.178.152.
 Escape character is '^]'.
 isis-mocker>
-isis-mocker> show version
-v2.0.2
-isis-mocker> show database all
-       sysid         hostname
-      0001.0001.0004 Oslo
-      0001.0001.0002 Brussels
-      0001.0001.0003 Paris
-      0001.0001.0001 Dublin
+isis-mocker>
+isis-mocker>
 isis-mocker> run mock 0001.0001.0004
 isis-mocker> run mocker 0 0001.0001.0002 eth4 10.3.0.0 38.3257.2132.0009.2131
 isis-mocker> run mocker 1 0001.0001.0003 eth5 10.5.0.0 38.3257.2132.0009.2131
 isis-mocker> run flood 0
 isis-mocker>
 isis-mocker>
-isis-mocker>
 isis-mocker> debug on
-isis-mocker> ISIS-1 Adj is : Init
-ISIS-1 Adj is : Up
+isis-mocker> [2024-01-28 06:36:34 CST]  ISIS-1 Adj is : Init
+[2024-01-28 06:36:43 CST]  ISIS-1 Adj is : Down
+[2024-01-28 06:36:51 CST]  ISIS-1 Adj is : Init
+[2024-01-28 06:37:00 CST]  ISIS-1 Adj is : Down
+[2024-01-28 06:37:08 CST]  ISIS-1 Adj is : Init
+[2024-01-28 06:37:08 CST]  ISIS-1 Adj is : Up <----
 
 isis-mocker> show mockers
  Mocker 0
  State: Up
- Uptime: 00:00:20
+ Uptime: 00:00:47
  Flooder attached
  Stats:
-       hello in      5
-       hello out     5
-       pkts in       198
-       pkts out      99
+       hello in      9
+       hello out     9
+       pkts in       740
+       pkts out      370
        lsp announced 3
  Mocker 1
- State: Up <----
- Uptime: 00:00:14 <----
+ State: Up <-----
+ Uptime: 00:00:10 <-----
  Stats:
-       hello in      4
-       hello out     4
-       pkts in       78
-       pkts out      39
+       hello in      6
+       hello out     6
+       pkts in       24
+       pkts out      10
 isis-mocker>
-
 ```
 
 

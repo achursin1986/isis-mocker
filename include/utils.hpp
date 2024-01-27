@@ -11,6 +11,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <cctype>
+#include <ctime>
 #include <iomanip>
 #include <iostream>
 #include <istream>
@@ -221,5 +222,12 @@ void interface_up(const char* ifname) {
       strncpy(ifr.ifr_name, ifname, IFNAMSIZ);
       ifr.ifr_flags |= IFF_UP;
       ioctl(sockfd, SIOCSIFFLAGS, &ifr);
+}
+
+std::string time_stamp(){
+    std::ostringstream strStream;
+    std::time_t t = std::time(nullptr);
+    strStream<< "[" << std::put_time(std::localtime(&t), "%F %T %Z") << "] ";
+    return strStream.str();
 } 
 

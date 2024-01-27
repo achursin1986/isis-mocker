@@ -99,7 +99,7 @@ class ISIS_ADJ : public tinyfsm::Fsm<ISIS_ADJ<id>> {
 template <int id>
 class Down : public ISIS_ADJ<id> {
 	void entry() override {
-                if (DEBUG_PRINT) Cli::cout() << "ISIS-"<< id << " Adj is : Down" << std::endl; 
+                if (DEBUG_PRINT) Cli::cout() << time_stamp() << " ISIS-"<< id << " Adj is : Down" << std::endl; 
 	};
 	void react(ISIS_PKT& e) override;
 };
@@ -107,14 +107,14 @@ class Down : public ISIS_ADJ<id> {
 template <int id>
 class Init : public ISIS_ADJ<id> {
 	void entry() override {
-		if (DEBUG_PRINT) Cli::cout() << "ISIS-"<< id << " Adj is : Init" << std::endl;
+		if (DEBUG_PRINT) Cli::cout() << time_stamp() << " ISIS-"<< id << " Adj is : Init" << std::endl;
 	};
 	void react(ISIS_PKT& e) override;
 };
 
 template <int id>
 class Up : public ISIS_ADJ<id> {
-	void entry() override { if (DEBUG_PRINT) Cli::cout() << "ISIS-" << id << " Adj is : Up" << std::endl;};
+	void entry() override { if (DEBUG_PRINT) Cli::cout() << time_stamp() << " ISIS-" << id << " Adj is : Up" << std::endl;};
 	void react(ISIS_PKT& e) override;
 	void react(TIMEOUT& e) override;
 };
@@ -344,7 +344,7 @@ void Up<id>::react(ISIS_PKT& e) {
                 e.stats->packets_out++;
 
 	} else {
-	        if (DEBUG_PRINT) Cli::cout() << "ISIS-"<< id << " Peer is not Up. Going Down." << std::endl;
+	        if (DEBUG_PRINT) Cli::cout() << time_stamp()<< " ISIS-"<< id << " Peer is not Up. Going Down." << std::endl;
                 *e.state = false;
                 if (e.params->flooder != nullptr  ) e.params->flooder->stop();
 		ISIS_ADJ<id>::template transit<Down<id>>();
@@ -354,7 +354,7 @@ void Up<id>::react(ISIS_PKT& e) {
 template <int id>
 void Up<id>::react(TIMEOUT& e) {
        if ( e.print ) { std::cout << std::endl;
-         if (DEBUG_PRINT) Cli::cout() << "Hold-time expired. Going Down." << std::endl; }
+         if (DEBUG_PRINT) Cli::cout()<< time_stamp() << " Hold-time expired. Going Down." << std::endl; }
          *e.state = false;
         if (e.flooder != nullptr  ) e.flooder->stop();
 	ISIS_ADJ<id>::template transit<Down<id>>();
