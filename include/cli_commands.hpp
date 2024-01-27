@@ -9,7 +9,7 @@
 #include "mocker.hpp"
 #include "parser.hpp"
 
-void show_database(auxdb& db) {
+void show_database(const auxdb& db) {
 	int paginator{};
 	std::string in = "";
 	std::cout << "       sysid         hostname" << std::endl;
@@ -27,7 +27,7 @@ void show_database(auxdb& db) {
 	}
 }
 
-void show_sysid(auxdb& db, std::string sysid) {
+void show_sysid(const auxdb& db,const  std::string& sysid) {
 	int paginator{};
 	std::string in = "";
 	if (db.find(sysid) == db.end()) {
@@ -35,16 +35,16 @@ void show_sysid(auxdb& db, std::string sysid) {
 		return;
 	}
 
-	if (db[sysid].get()->NEIGHBORS_.size()) {
-		std::cout << db[sysid].get()->HOSTNAME_ << std::endl;
+	if (db.at(sysid).get()->NEIGHBORS_.size()) {
+		std::cout << db.at(sysid).get()->HOSTNAME_ << std::endl;
 		std::cout << "area: " << std::endl;
-		std::cout << db[sysid].get()->AREA_ << std::endl;
-		if (db[sysid].get()->NEIGHBORS_.size()) std::cout << "neighbors: " << std::endl;
-		for (auto k : db[sysid].get()->NEIGHBORS_) {
+		std::cout << db.at(sysid).get()->AREA_ << std::endl;
+		if (db.at(sysid).get()->NEIGHBORS_.size()) std::cout << "neighbors: " << std::endl;
+		for (auto k : db.at(sysid).get()->NEIGHBORS_) {
 			std::cout << "      " << k.second.first << " <--- " << k.second.second << " " << k.first << std::endl;
 		}
 		std::cout << "prefixes: " << std::endl;
-		for (auto k : db[sysid].get()->SUBNETS_) {
+		for (const auto& k : db.at(sysid).get()->SUBNETS_) {
 			std::cout << "      " << k << std::endl;
 			++paginator;
 			if (paginator > 25) {
@@ -59,7 +59,7 @@ void show_sysid(auxdb& db, std::string sysid) {
 	}
 }
 
-void show_mockers(std::vector<std::unique_ptr<Mocker>>& mockers) {
+void show_mockers(const std::vector<std::unique_ptr<Mocker>>& mockers) {
 	for (auto i = mockers.begin(); i != mockers.end(); i++) (*i).get()->print_stats();
 }
 
@@ -67,13 +67,13 @@ void clear_stats(std::vector<std::unique_ptr<Mocker>>& mockers) {
 	for (auto i = mockers.begin(); i != mockers.end(); i++) (*i).get()->clear_stats();
 }
 
-void show_interfaces(std::vector<std::string>& ifnames, std::unordered_set<std::string>& ifnames_used) {
+void show_interfaces(const std::vector<std::string>& ifnames, std::unordered_set<std::string>& ifnames_used) {
 	std::cout << "Interfaces:" << std::endl;
-	for (auto k : ifnames) {
+	for (const auto& k : ifnames) {
 		std::cout << "      " << k << std::endl;
 	}
 	std::cout << "Used:" << std::endl;
-	for (auto k : ifnames_used) {
+	for (const auto& k : ifnames_used) {
 		std::cout << "      " << k << std::endl;
 	}
 }
