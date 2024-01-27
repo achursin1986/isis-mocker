@@ -9,17 +9,17 @@
 #include "mocker.hpp"
 #include "parser.hpp"
 
-void show_database(const auxdb& db) {
+void show_database(const auxdb& db, std::ostream& out) {
 	int paginator{};
 	std::string in = "";
-	std::cout << "       sysid         hostname" << std::endl;
+	out << "       sysid         hostname" << std::endl;
 	for (auto i = db.begin(); i != db.end(); i++) {
 		if ((*i).second.get()->NEIGHBORS_.size()) {
-			std::cout << "      " << (*i).first << " " << (*i).second.get()->HOSTNAME_ << std::endl;
+			out << "      " << (*i).first << " " << (*i).second.get()->HOSTNAME_ << std::endl;
 			++paginator;
 			if (paginator > 25) {
 				paginator = 0;
-				std::cout << "<<press Enter for more>>" << std::endl;
+				out << "<<press Enter for more>>" << std::endl;
 				fgetc(stdin);
 				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			}
@@ -27,67 +27,67 @@ void show_database(const auxdb& db) {
 	}
 }
 
-void show_sysid(const auxdb& db,const  std::string& sysid) {
+void show_sysid(const auxdb& db,const  std::string& sysid, std::ostream& out) {
 	int paginator{};
 	std::string in = "";
 	if (db.find(sysid) == db.end()) {
-		std::cout << "Incorrect id or not found" << std::endl;
+		out << "Incorrect id or not found" << std::endl;
 		return;
 	}
 
 	if (db.at(sysid).get()->NEIGHBORS_.size()) {
-		std::cout << db.at(sysid).get()->HOSTNAME_ << std::endl;
-		std::cout << "area: " << std::endl;
-		std::cout << db.at(sysid).get()->AREA_ << std::endl;
-		if (db.at(sysid).get()->NEIGHBORS_.size()) std::cout << "neighbors: " << std::endl;
+		out << db.at(sysid).get()->HOSTNAME_ << std::endl;
+		out << "area: " << std::endl;
+		out << db.at(sysid).get()->AREA_ << std::endl;
+		if (db.at(sysid).get()->NEIGHBORS_.size()) out << "neighbors: " << std::endl;
 		for (auto k : db.at(sysid).get()->NEIGHBORS_) {
-			std::cout << "      " << k.second.first << " <--- " << k.second.second << " " << k.first << std::endl;
+			out << "      " << k.second.first << " <--- " << k.second.second << " " << k.first << std::endl;
 		}
-		std::cout << "prefixes: " << std::endl;
+		out << "prefixes: " << std::endl;
 		for (const auto& k : db.at(sysid).get()->SUBNETS_) {
-			std::cout << "      " << k << std::endl;
+			out << "      " << k << std::endl;
 			++paginator;
 			if (paginator > 25) {
 				paginator = 0;
-				std::cout << "<<press Enter for more>>" << std::endl;
+				out << "<<press Enter for more>>" << std::endl;
 				fgetc(stdin);
 				std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			}
 		}
 
-		std::cout << std::endl;
+		out << std::endl;
 	}
 }
 
-void show_mockers(const std::vector<std::unique_ptr<Mocker>>& mockers) {
-	for (auto i = mockers.begin(); i != mockers.end(); i++) (*i).get()->print_stats();
+void show_mockers(const std::vector<std::unique_ptr<Mocker>>& mockers, std::ostream& out) {
+	for (auto i = mockers.begin(); i != mockers.end(); i++) (*i).get()->print_stats(out);
 }
 
 void clear_stats(std::vector<std::unique_ptr<Mocker>>& mockers) {
 	for (auto i = mockers.begin(); i != mockers.end(); i++) (*i).get()->clear_stats();
 }
 
-void show_interfaces(const std::vector<std::string>& ifnames, std::unordered_set<std::string>& ifnames_used) {
-	std::cout << "Interfaces:" << std::endl;
+void show_interfaces(const std::vector<std::string>& ifnames, std::unordered_set<std::string>& ifnames_used, std::ostream& out) {
+	out << "Interfaces:" << std::endl;
 	for (const auto& k : ifnames) {
-		std::cout << "      " << k << std::endl;
+		out << "      " << k << std::endl;
 	}
-	std::cout << "Used:" << std::endl;
+	out << "Used:" << std::endl;
 	for (const auto& k : ifnames_used) {
-		std::cout << "      " << k << std::endl;
+		out << "      " << k << std::endl;
 	}
 }
 
 void mock(std::unordered_map<std::string, std::string>& lsdb, std::mutex& db_mtx, const std::string& sysid,
-	  std::pair<std::string, std::string>& mocked) {
+	  std::pair<std::string, std::string>& mocked, std::ostream& out) {
 	std::unique_lock<std::mutex> lock(db_mtx);
 	std::string lspid = sysid + ".00-00";
 	if (lsdb.find(lspid) == lsdb.end()) {
-		std::cout << "Incorrect sysid or not found" << std::endl;
+		out << "Incorrect sysid or not found" << std::endl;
 		return;
 	}
 	if (mocked.first.length() || mocked.second.length()) {
-		std::cout << "Already present mocked instance" << std::endl;
+		out << "Already present mocked instance" << std::endl;
 		return;
 	}
 	mocked.first = lspid;
@@ -98,13 +98,13 @@ void mock(std::unordered_map<std::string, std::string>& lsdb, std::mutex& db_mtx
 void mocker_start(int id, std::string ifname, std::string sysid, std::string area, std::string ip,
 		  std::vector<std::unique_ptr<Mocker>>& mockers, std::vector<std::string>& ifnames,
 		  std::unordered_set<std::string>& used_ifnames, std::unordered_set<int>& used_ids,
-		  std::pair<std::string, std::string>& mocked_lsp) {
+		  std::pair<std::string, std::string>& mocked_lsp, std::ostream& out) {
 	if (id < 0 || id >= SM_PARK_SIZE) {
-		std::cout << "Incorrect index, use indecies 0 to " << SM_PARK_SIZE << std::endl;
+		out << "Incorrect index, use indecies 0 to " << SM_PARK_SIZE << std::endl;
 		return;
 	}
 	if (!ifname.size() || !sysid.size() || !area.size() || !ip.size()) {
-		std::cout << "Empty params are not allowed, follow standard notations for parameters" << std::endl;
+		out << "Empty params are not allowed, follow standard notations for parameters" << std::endl;
 		return;
 	}
 	bool found{false};
@@ -113,16 +113,16 @@ void mocker_start(int id, std::string ifname, std::string sysid, std::string are
 	}
 
 	if (!found) {
-		std::cout << "Provided ifname is not on the list" << std::endl;
+		out << "Provided ifname is not on the list" << std::endl;
 		return;
 	}
 
 	if (used_ifnames.count(ifname) || used_ids.count(id)) {
-		std::cout << "id or ifname is/are used already" << std::endl;
+		out << "id or ifname is/are used already" << std::endl;
 		return;
 	}
 	if (!mocked_lsp.first.size() || !mocked_lsp.second.size()) {
-		std::cout << "Need to mock first" << std::endl;
+		out << "Need to mock first" << std::endl;
 		return;
 	}
 
@@ -134,9 +134,9 @@ void mocker_start(int id, std::string ifname, std::string sysid, std::string are
 }
 
 void flood_start(int id, std::unordered_map<std::string, std::string>& lsdb, std::vector<std::unique_ptr<Flooder>>& flooders,
-		 std::vector<std::unique_ptr<Mocker>>& mockers) {
+		 std::vector<std::unique_ptr<Mocker>>& mockers,std::ostream& out) {
 	if (mockers.empty()) {
-		std::cout << "Need to add mockers first" << std::endl;
+		out << "Need to add mockers first" << std::endl;
 		return;
 	}
 	bool found{false};
@@ -154,30 +154,30 @@ void flood_start(int id, std::unordered_map<std::string, std::string>& lsdb, std
 			found = true;
 		}
 	}
-	if (!found) std::cout << "Mocker was not found" << std::endl;
+	if (!found) out << "Mocker was not found" << std::endl;
 }
 
 void test_start(int id, std::unordered_map<std::string, std::string>& lsdb, std::unordered_map<std::string, std::string>& testdb,
 		std::vector<std::unique_ptr<Flooder>>& flooders, std::vector<std::unique_ptr<Mocker>>& mockers,
-		std::vector<std::unique_ptr<Tester>>& testers, int test_interval) {
+		std::vector<std::unique_ptr<Tester>>& testers, int test_interval, std::ostream& out) {
 	if (testers.size() > 0) {
-		std::cout << "Tester is already running" << std::endl;
+		out << "Tester is already running" << std::endl;
 		return;
 	}
 	if (mockers.empty()) {
-		std::cout << "Need to add mockers first" << std::endl;
+		out << "Need to add mockers first" << std::endl;
 		return;
 	}
 	if (flooders.empty()) {
-		std::cout << "Need to add flooders first" << std::endl;
+		out << "Need to add flooders first" << std::endl;
 		return;
 	}
 	if (testdb.empty()) {
-		std::cout << "Diff is empty" << std::endl;
+		out << "Diff is empty" << std::endl;
 		return;
 	}
 	if (test_interval <= 50 || test_interval > 5000) {
-		std::cout << "Out of range interval" << std::endl;
+		out << "Out of range interval" << std::endl;
 		return;
 	}
 
@@ -191,7 +191,7 @@ void test_start(int id, std::unordered_map<std::string, std::string>& lsdb, std:
 			found = true;
 		}
 	}
-	if (!found) std::cout << "Mocker was not found" << std::endl;
+	if (!found) out << "Mocker was not found" << std::endl;
 }
 
 void test_clear(std::vector<std::unique_ptr<Tester>>& testers) { testers.clear(); }
@@ -216,14 +216,14 @@ void reset_all(std::vector<std::unique_ptr<Mocker>>& mockers, std::vector<std::u
 }
 
 void prepare_test(std::unordered_map<std::string, std::string>& lsdb, std::unordered_map<std::string, std::string>& testdb,
-		  const std::string& file_json2, const std::string& file_json_raw2, const std::string& file_json_hostname ) {
+		  const std::string& file_json2, const std::string& file_json_raw2, const std::string& file_json_hostname, std::ostream& out ) {
 	testdb.clear();
 	std::unordered_map<std::string, std::string> LSDB2;
 	auxdb AUXDB2;
 
 	try {
 		parse(LSDB2, AUXDB2, file_json2, file_json_raw2, file_json_hostname);
-		std::cout << "Loaded json2" << std::endl;
+		out << "Loaded json2" << std::endl;
 		malloc_trim(0);
 
 		for (auto i = lsdb.begin(); i != lsdb.end(); i++) {
@@ -243,11 +243,11 @@ void prepare_test(std::unordered_map<std::string, std::string>& lsdb, std::unord
 		}
 
 		if (testdb.empty())
-			std::cout << "No diff found" << std::endl;
+			out << "No diff found" << std::endl;
 		else {
-			std::cout << "Diff:" << std::endl;
+			out << "Diff:" << std::endl;
 			for (auto k : testdb) std::cout << "       " << k.first << std::endl;
-			std::cout << "Ready to start test" << std::endl;
+			out << "Ready to start test" << std::endl;
 		}
 
 	} catch (const std::exception& e) {

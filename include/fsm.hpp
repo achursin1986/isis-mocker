@@ -20,7 +20,6 @@
 
 extern  bool DEBUG_PRINT;
 
-
 struct Stats {
 
       Stats() { reset(); }

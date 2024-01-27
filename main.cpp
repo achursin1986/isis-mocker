@@ -17,16 +17,14 @@
 
 #include "cli/boostasioscheduler.h"
 #include "cli/boostasioremotecli.h"
+#include "cli/cli.h"
+#include "cli/clilocalsession.h"
+#include "cli/filehistorystorage.h"
 
 namespace cli {
         using MainScheduler = BoostAsioScheduler;
         using CliTelnetServer = BoostAsioCliTelnetServer;
 }
-
-#include "cli/cli.h"
-#include "cli/clilocalsession.h"
-#include "cli/filehistorystorage.h"
-
 
 using namespace cli;
 
@@ -43,7 +41,6 @@ int main(int argc, char* argv[]) {
     std::unordered_set<int> used_ids;
     std::vector<std::string> ifnames;
     std::string json_file,json_file_raw,json_file_hostname;
- 
 
     try {
            bpo::options_description desc("options");
@@ -125,27 +122,27 @@ int main(int argc, char* argv[]) {
 
          auto showdatabaseMenu = std::make_unique<Menu>("database","show database commands");
          
-         showMenu->Insert("interfaces", [&ifnames,&used_ifnames](std::ostream& out) {  show_interfaces(ifnames,used_ifnames); }, "show interfaces");
-         showMenu->Insert("version", [](std::ostream& out) {  std::cout << version() << std::endl; }, "show version");
-         showMenu->Insert("mockers", [&Mockers](std::ostream& out) {  show_mockers(Mockers);  }, "show mockers info");
-         showdatabaseMenu->Insert("all",[&AUXDB](std::ostream& out){ show_database(AUXDB); }, "show sys-ids");
-         showdatabaseMenu->Insert("sysid",{"xxxx.xxxx.xxxx"},[&AUXDB](std::ostream& out, const std::string& sysid){ show_sysid(AUXDB,sysid); }, "show sys-id details");
+         showMenu->Insert("interfaces", [&ifnames,&used_ifnames](std::ostream& out) {  show_interfaces(ifnames,used_ifnames, out); }, "show interfaces");
+         showMenu->Insert("version", [](std::ostream& out) {  out << version() << std::endl;  }, "show version");
+         showMenu->Insert("mockers", [&Mockers](std::ostream& out) {  show_mockers(Mockers,out);  }, "show mockers info");
+         showdatabaseMenu->Insert("all",[&AUXDB](std::ostream& out){ show_database(AUXDB,out); }, "show sys-ids");
+         showdatabaseMenu->Insert("sysid",{"xxxx.xxxx.xxxx"},[&AUXDB](std::ostream& out, const std::string& sysid){ show_sysid(AUXDB,sysid,out); }, "show sys-id details");
         
 
          runMenu->Insert("mock",{"xxxx.xxxx.xxxx"},[&LSDB,&db_mtx,&mocked_lsp](std::ostream& out, const std::string& sysid)
-                                                                  { mock(LSDB,db_mtx,sysid,mocked_lsp);  }, "remove sys-id from lsdb");
+                                                                  { mock(LSDB,db_mtx,sysid,mocked_lsp, out);  }, "remove sys-id from lsdb");
          runMenu->Insert("mocker",{"x xxxx.xxxx.xxxx ethx xx.xx.xx.xx xx.xxxx"},[&Mockers,&ifnames,&used_ifnames,&used_ids,&mocked_lsp](std::ostream& out, int id, 
          const std::string& sysid, const std::string& ifname, const std::string& ip, const std::string& area)
-                            { mocker_start(id,ifname, sysid,area,ip,Mockers,ifnames,used_ifnames,used_ids, mocked_lsp); },"start mocker instance");
+                            { mocker_start(id,ifname, sysid,area,ip,Mockers,ifnames,used_ifnames,used_ids, mocked_lsp, out); },"start mocker instance");
           
           runMenu->Insert("flood",{"x"},[&LSDB,&Mockers,&Flooders](std::ostream& out, int id )
-                                                                  { flood_start(id,LSDB,Flooders,Mockers);  }, "start flood");
+                                                                  { flood_start(id,LSDB,Flooders,Mockers,out);  }, "start flood");
           runMenu->Insert("test",{"x(id) x(msec 50 ... 5000)"},[&LSDB,&TESTDB,&Mockers,&Flooders,&Testers](std::ostream& out, int id, int test_interval )
-                                                                  { test_start(id,LSDB,TESTDB,Flooders,Mockers,Testers,test_interval);  }, "start test");
+                                                                  { test_start(id,LSDB,TESTDB,Flooders,Mockers,Testers,test_interval,out);  }, "start test");
 
 
           loadMenu->Insert("json2",{"filename"},[&TESTDB,&LSDB2,&json_file,&json_file_hostname](std::ostream& out, const std::string& json2) 
-                                     { prepare_test(LSDB2,TESTDB, json_file, const_cast<std::string&>(json2),json_file_hostname); }, "load json2 raw file");
+                                     { prepare_test(LSDB2,TESTDB, json_file, const_cast<std::string&>(json2),json_file_hostname, out); }, "load json2 raw file");
 
 
           debugMenu->Insert("on",[](std::ostream& out) { DEBUG_PRINT = true;  }, "debug on");
@@ -167,8 +164,11 @@ int main(int argc, char* argv[]) {
          MainScheduler scheduler;
          CliLocalTerminalSession localSession(cli, scheduler, std::cout, 100);
          localSession.ExitAction([&scheduler](auto& out) { scheduler.Stop(); });
+
          CliTelnetServer server(cli, scheduler, 5000);
-         server.ExitAction([](auto& out) { });
+         server.ExitAction( [](auto& out) { } );
+
+
          scheduler.Run();
 
 

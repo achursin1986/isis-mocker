@@ -132,8 +132,8 @@ class Mocker {
 		params_.tester = nullptr;
 	}
 
-	void print_stats() {
-		std::cout << " Mocker " << id_ << std::endl;
+	void print_stats(std::ostream& out) {
+		out << " Mocker " << id_ << std::endl;
 		int hrs{}, min{}, sec{};
 		if (state_) {
 			double uptime = std::difftime(std::time(nullptr), stats_.up_time);
@@ -142,29 +142,29 @@ class Mocker {
 				min = ((int)uptime % 3600) / 60;
 				sec = ((int)uptime % 3600) % 60;
 			}
-			std::cout << " State: Up" << std::endl;
-			std::cout << " Uptime: " << std::setw(2) << std::setfill('0') << hrs << ":" << std::setw(2) << std::setfill('0')
+			out << " State: Up" << std::endl;
+			out << " Uptime: " << std::setw(2) << std::setfill('0') << hrs << ":" << std::setw(2) << std::setfill('0')
 				  << min << ":" << std::setw(2) << std::setfill('0') << sec << std::endl;
 
 		} else {
-			std::cout << " State: Down" << std::endl;
+			out << " State: Down" << std::endl;
 		}
-		if (params_.flooder != nullptr) std::cout << " Flooder attached" << std::endl;
-		if (params_.tester != nullptr) std::cout << " Tester attached" << std::endl;
-		std::cout << " Stats: " << std::endl;
-		std::cout << "       "
+		if (params_.flooder != nullptr) out << " Flooder attached" << std::endl;
+		if (params_.tester != nullptr) out << " Tester attached" << std::endl;
+		out << " Stats: " << std::endl;
+		out << "       "
 			  << "hello in      " << stats_.hello_in << std::endl;
-		std::cout << "       "
+		out << "       "
 			  << "hello out     " << stats_.hello_out << std::endl;
-		std::cout << "       "
+		out << "       "
 			  << "pkts in       " << stats_.packets_in << std::endl;
-		std::cout << "       "
+		out << "       "
 			  << "pkts out      " << stats_.packets_out << std::endl;
 		if (params_.flooder != nullptr)
-			std::cout << "       "
+			out << "       "
 				  << "lsp announced " << params_.flooder->get_stats().lsp_announced << std::endl;
 		if (params_.tester != nullptr)
-			std::cout << "       "
+			out << "       "
 				  << "test cycles " << params_.tester->get_stats().cycles / 2 << std::endl;
 	}
 
