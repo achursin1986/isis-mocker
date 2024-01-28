@@ -263,14 +263,17 @@ void Up<id>::react(ISIS_PKT& e) {
         std::istream packet_r(&e.data_);
 	eth_header hdr_0_r;
 	isis_header hdr_1_r;
-	isis_hello_header hdr_2_r;
-	tlv_240_ext payload_0_r;
-	packet_r >> hdr_0_r >> hdr_1_r >> hdr_2_r >> payload_0_r;
+	
+	packet_r >> hdr_0_r >> hdr_1_r; 
         e.stats->packets_in++;
-	/* CSNP and CSNP support from neighbor is not required for now, will be
-	 * added later */
 
-	if ((hdr_1_r.pdu_type() == p2p_hello) && (payload_0_r.adjacency_state() == up) ) {
+
+	if (hdr_1_r.pdu_type() == p2p_hello) { 
+                isis_hello_header hdr_2_r;
+                tlv_240_ext payload_0_r;
+                packet_r >> hdr_2_r >> payload_0_r;
+
+           if (payload_0_r.adjacency_state() == up ) {
                 #ifdef DEBUG
 		std::cout << "Got hello packet in Up " << id << std::endl;
                 #endif
@@ -297,8 +300,6 @@ void Up<id>::react(ISIS_PKT& e) {
                 ipv4_topo.topology(2);
                 mt.tlv_length(4);
                 */ 
-  
-
 
 		/* flip to up */
 		payload_0.adjacency_state(up);
@@ -321,34 +322,39 @@ void Up<id>::react(ISIS_PKT& e) {
                 e.stats->hello_out++;
                 e.stats->packets_out++;
                 *e.state = true;
+            } else { 
+                if (DEBUG_PRINT) Cli::cout() << time_stamp()<< " ISIS-"<< id << " Peer is not Up. Going Down." << std::endl;
+                *e.state = false;
+                if (e.params->flooder != nullptr  ) e.params->flooder->stop();
+                ISIS_ADJ<id>::template transit<Down<id>>(); 
+            } 
+        /* ack any LSP */
+	} else if (hdr_1_r.pdu_type() == l2_lsp) {
 
-	} else if ((hdr_1_r.pdu_type() == l2_lsp) ||
-		   (hdr_1_r.pdu_type() == l2_csnp) ||
-		   (hdr_1_r.pdu_type() == l2_psnp)) {
-		/* if CSNP or LSP need to send empty CSNP as we don't store data
-		 * for hello  */         // need to send hello here as well
+                isis_lsp_header hdr_2_r;
+                packet_r >> hdr_2_r;
+                
+
 		boost::asio::streambuf packet;
 		std::ostream os(&packet);
 		eth_header hdr_0;
 		isis_header hdr_1;
-		isis_csnp_header hdr_2;
+		isis_psnp_header hdr_2;
                 hdr_2.source_id(e.params->LSP_ID_);
-		//tlv_9 payload_0;
-                //isis_csnp_1lsp payload_0;
-		hdr_1.pdu_type(l2_csnp);
-                hdr_2.pdu_length(sizeof(hdr_1) + sizeof(hdr_2)); //+ sizeof(payload_0));
-		hdr_1.length_indicator(33);
-		hdr_0.length(3 + sizeof(hdr_1) + sizeof(hdr_2)); //+ sizeof(payload_0));
-		os << hdr_0 << hdr_1 << hdr_2; //<< payload_0;
+		tlv_9 payload_0;
+                payload_0.tlv_length(16);
+                lsp_entry psnp_body;
+                psnp_body.entry_fill(hdr_2_r.get_psnp());
+		hdr_1.pdu_type(l2_psnp);
+                hdr_2.pdu_length(sizeof(hdr_1) + sizeof(hdr_2) + sizeof(payload_0) + 16);
+		hdr_1.length_indicator(17);
+		hdr_0.length(3 + sizeof(hdr_1) + sizeof(hdr_2) + sizeof(payload_0) + 16);
+		os << hdr_0 << hdr_1 << hdr_2 << payload_0 << psnp_body ;
 		e.endpoint->do_send(&packet);
                 e.stats->packets_out++;
 
-	} else {
-	        if (DEBUG_PRINT) Cli::cout() << time_stamp()<< " ISIS-"<< id << " Peer is not Up. Going Down." << std::endl;
-                *e.state = false;
-                if (e.params->flooder != nullptr  ) e.params->flooder->stop();
-		ISIS_ADJ<id>::template transit<Down<id>>();
-	}
+	}  
+               
 }
 
 template <int id>

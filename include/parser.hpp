@@ -192,6 +192,10 @@ void parse(std::unordered_map<std::string, std::string>& lsdb, auxdb& auxdb, con
 		/* size of the body and eth header */
 		eth_header eth;
 		eth.length(3 + lsp_body.length());
+
+                /* fill data to form PSNP, CSNP */
+
+
 		boost::asio::streambuf packet_raw;
 		std::ostream os_raw(&packet_raw);
 		os_raw << eth << lsp_body;
