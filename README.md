@@ -4,8 +4,8 @@ Tool provides an ability to load ISIS protocol(RFC 1195) database in json format
 _ONLY_ L2 P2P adjacency supported and Linux OS. 
 
 #### Features supported
-* P2P peering with no MT 
-* no limit on database contents as we load raw export
+* P2P 
+* all database content is replicated, depending on DUT config all features can work
 
 
 #### Encoded params
@@ -186,40 +186,71 @@ Connected to 192.168.178.152.
 Escape character is '^]'.
 isis-mocker>
 isis-mocker>
-isis-mocker>
+isis-mocker> show version
+v2.0.3
+isis-mocker> debug on
 isis-mocker> run mock 0001.0001.0004
 isis-mocker> run mocker 0 0001.0001.0002 eth4 10.3.0.0 38.3257.2132.0009.2131
 isis-mocker> run mocker 1 0001.0001.0003 eth5 10.5.0.0 38.3257.2132.0009.2131
 isis-mocker> run flood 0
+isis-mocker> [2024-01-29 00:31:02 CST]  ISIS-1 Adj is : Init
+[2024-01-29 00:31:02 CST]  ISIS-1 Adj is : Up <-----
+
+isis-mocker>
+isis-mocker> [2024-01-29 00:31:04 CST]  ISIS-0 Adj is : Init
+[2024-01-29 00:31:04 CST]  ISIS-0 Adj is : Up
+
 isis-mocker>
 isis-mocker>
-isis-mocker> debug on
-isis-mocker> [2024-01-28 06:36:34 CST]  ISIS-1 Adj is : Init
-[2024-01-28 06:36:43 CST]  ISIS-1 Adj is : Down
-[2024-01-28 06:36:51 CST]  ISIS-1 Adj is : Init
-[2024-01-28 06:37:00 CST]  ISIS-1 Adj is : Down
-[2024-01-28 06:37:08 CST]  ISIS-1 Adj is : Init
-[2024-01-28 06:37:08 CST]  ISIS-1 Adj is : Up <----
+isis-mocker> show mockers
+ Mocker 0
+ State: Up
+ Uptime: 00:00:04
+ Flooder attached
+ Stats:
+       hello in      3
+       hello out     3
+       pkts in       10
+       pkts out      4
+       lsp announced 3
+ Mocker 1
+ State: Up
+ Uptime: 00:00:06
+ Stats:
+       hello in      3
+       hello out     3
+       pkts in       16
+       pkts out      8
+
+isis-mocker> show interfaces
+Interfaces:
+      eth3
+      eth4
+      eth5
+      eth6
+Used:
+      eth5
+      eth4
 
 isis-mocker> show mockers
  Mocker 0
  State: Up
- Uptime: 00:00:47
+ Uptime: 00:00:24
  Flooder attached
  Stats:
-       hello in      9
-       hello out     9
-       pkts in       740
-       pkts out      370
+       hello in      5
+       hello out     5
+       pkts in       16
+       pkts out      6
        lsp announced 3
  Mocker 1
- State: Up <-----
- Uptime: 00:00:10 <-----
+ State: Up
+ Uptime: 00:00:26
  Stats:
        hello in      6
        hello out     6
        pkts in       24
-       pkts out      10
+       pkts out      11
 isis-mocker>
 ```
 
