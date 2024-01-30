@@ -41,6 +41,7 @@ target_link_libraries(isis-mocker-debug Threads::Threads Boost::thread Boost::pr
 
 target_compile_options(isis-mocker PRIVATE -Werror)
 set_target_properties(isis-mocker PROPERTIES LINK_FLAGS_RELEASE -s)
+
 target_compile_options(isis-mocker-debug PRIVATE -g -Werror)
 target_compile_definitions(isis-mocker-debug PRIVATE DEBUG)
 target_include_directories(tests PRIVATE include)

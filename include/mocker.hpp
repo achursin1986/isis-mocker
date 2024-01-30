@@ -9,6 +9,8 @@
 #include "tester.hpp"
 #include "utils.hpp"
 
+
+
 void fill_params(struct Params& params, std::string sysid_str, std::string ip_str, std::string area_str) {
         /* sysid */
         boost::erase_all(sysid_str, ".");
@@ -49,24 +51,25 @@ class Mocker {
 	    : io_(io_context_, &ifname[0]), id_(id), holdtimer_(timer_) {
 		fill_params(params_, sysid, ip, area);
 		terminate = false;
-
 		packet_th_ = std::thread([&] {
 			while (!terminate) {
 				io_.do_receive();
-				holdtimer_.expires_from_now(boost::posix_time::seconds(30));
-				holdtimer_.async_wait([&](boost::system::error_code ec) {
-					if (!ec && ec.value() != 125) {
-						TIMEOUT to;
-						to.state = &state_;
-						to.flooder = params_.flooder;
-						to.print = false;
-						dynamic_dispatch<TIMEOUT>(id_, to);
-						io_context_.reset();
-					}
-				});
-				std::thread([&] { timer_.run(); }).detach();
-				io_context_.run();
-
+                                if ( state_ ) { 
+                                timer_.reset();
+                                holdtimer_.expires_from_now(boost::posix_time::seconds(30));
+                                holdtimer_.async_wait([&](const boost::system::error_code& ec) {
+                                          if ( ec.value() == 0  ) {
+                                              TIMEOUT to;
+                                              to.state = &state_;
+                                              to.flooder = params_.flooder;
+                                              to.print = false;
+                                              dynamic_dispatch<TIMEOUT>(id_, to);
+                                          }
+                                    });
+                                }
+                                std::thread([&]{ timer_.run();}).detach();
+                                io_context_.run();
+                                holdtimer_.cancel();
 				ISIS_PKT packet;
 				stats_.packets_in++;
 				std::size_t bytes_copied =
@@ -81,7 +84,7 @@ class Mocker {
 					packet.state = &state_;
 					dynamic_dispatch<ISIS_PKT>(id_, packet);
 				}
-				io_context_.reset();
+                                io_context_.reset();
 			};
 		});
 	}
@@ -94,7 +97,7 @@ class Mocker {
 		io_.do_stop();
 		io_context_.stop();
 		holdtimer_.cancel();
-		timer_.stop();
+                timer_.reset();
 
 		TIMEOUT to;
 		to.state = &state_;
@@ -169,7 +172,7 @@ class Mocker {
 	}
 
     private:
-	boost::asio::io_context io_context_, timer_;
+	boost::asio::io_context io_context_,timer_;
 	boost::asio::deadline_timer holdtimer_;
 	IO io_;
 	std::thread packet_th_;
