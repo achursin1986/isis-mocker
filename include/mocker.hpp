@@ -10,6 +10,9 @@
 #include "utils.hpp"
 
 
+#include <boost/asio.hpp>
+
+
 
 void fill_params(struct Params& params, std::string sysid_str, std::string ip_str, std::string area_str) {
         /* sysid */
@@ -54,11 +57,10 @@ class Mocker {
 		packet_th_ = std::thread([&] {
 			while (!terminate) {
 				io_.do_receive();
-                                if ( state_ ) { 
-                                timer_.reset();
+                                
                                 holdtimer_.expires_from_now(boost::posix_time::seconds(30));
                                 holdtimer_.async_wait([&](const boost::system::error_code& ec) {
-                                          if ( ec.value() == 0  ) {
+                                          if ( ec.value() == 0 ) {
                                               TIMEOUT to;
                                               to.state = &state_;
                                               to.flooder = params_.flooder;
@@ -66,10 +68,13 @@ class Mocker {
                                               dynamic_dispatch<TIMEOUT>(id_, to);
                                           }
                                     });
-                                }
-                                std::thread([&]{ timer_.run();}).detach();
+                               
+                                auto t = std::thread([&]{ timer_.run();});
                                 io_context_.run();
-                                holdtimer_.cancel();
+      
+                                holdtimer_.expires_from_now(boost::posix_time::milliseconds(1));
+                                holdtimer_.async_wait([&](const boost::system::error_code& ec){});
+
 				ISIS_PKT packet;
 				stats_.packets_in++;
 				std::size_t bytes_copied =
@@ -85,6 +90,8 @@ class Mocker {
 					dynamic_dispatch<ISIS_PKT>(id_, packet);
 				}
                                 io_context_.reset();
+                                t.join();
+                                timer_.reset();
 			};
 		});
 	}
@@ -180,6 +187,6 @@ class Mocker {
 	Params params_;
 	std::mutex ptr_guard;
 	int id_;
-	std::atomic_bool terminate, state_;
+	std::atomic_bool terminate, state_, timer;
 };
 
